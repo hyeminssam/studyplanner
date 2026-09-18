@@ -229,7 +229,7 @@ textarea.note:focus{border-color:var(--gold)}
   <div class="card">
     <div id="loginErr"></div>
     <div class="field"><label for="inSid">학번</label><input id="inSid" inputmode="numeric" placeholder="예: 10625" autocomplete="username"></div>
-    <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 장원영"></div>
+    <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 김민준"></div>
     <div class="field"><label for="inPw">비밀번호</label><input id="inPw" type="password" placeholder="처음이라면 쓰고 싶은 비밀번호" autocomplete="current-password"></div>
     <button class="btn" id="btnLogin">들어가기</button>
     <p class="hint">처음 들어오면 지금 쓴 비밀번호가 내 비밀번호가 돼요. 잊어버리면 선생님께 말하세요.</p>
@@ -387,7 +387,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxe7rG5HvtATY84j9Ueb-acLj6elpee_mt6ubZz90KOGrgxunSHHLuBgYf2VjhO1-tKcg/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbyFFabiWo9orMXfBjXu4FUghraH-IRkK7SW1cnJW_j4GPfGxP4YEpGmcH6YtF_fJC3HtA/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -396,8 +396,32 @@ const el = (t, c, h) => { const n = document.createElement(t); if (c) n.classNam
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
 async function api(payload) {
-  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-  const j = await r.json();
+  if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(API_URL)) {
+    throw new Error('API_URL 이 아직 채워지지 않았어요. index.html 위쪽에 Apps Script 웹 앱 주소(/exec 로 끝나는 주소)를 넣어 주세요.');
+  }
+
+  let res, text;
+  try {
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+    text = await res.text();
+  } catch (e) {
+    throw new Error('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.');
+  }
+
+  let j;
+  try {
+    j = JSON.parse(text);
+  } catch (e) {
+    // 서버가 JSON 대신 구글 페이지나 오류 화면을 돌려준 경우
+    if (/accounts\.google|로그인|Sign in/i.test(text)) {
+      throw new Error('서버가 구글 로그인 화면을 보냈어요. Apps Script 배포 설정에서 액세스 권한을 "모든 사용자"로 바꿔 주세요.');
+    }
+    if (/승인|authoriz|permission|Exception/i.test(text)) {
+      throw new Error('서버에서 권한 오류가 났어요. Apps Script 편집기에서 setup 함수를 한 번 실행해 권한을 승인한 뒤, 새 버전으로 다시 배포해 주세요.');
+    }
+    throw new Error('서버 응답을 읽지 못했어요 (' + res.status + '). 배포 주소와 새 버전 배포 여부를 확인해 주세요.');
+  }
+
   if (!j.ok) throw new Error(j.error || '문제가 생겼어요. 잠시 뒤 다시 해 보세요.');
   return j;
 }
