@@ -229,7 +229,7 @@ textarea.note:focus{border-color:var(--gold)}
   <div class="card">
     <div id="loginErr"></div>
     <div class="field"><label for="inSid">학번</label><input id="inSid" inputmode="numeric" placeholder="예: 10625" autocomplete="username"></div>
-    <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 김민준"></div>
+    <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 장원영"></div>
     <div class="field"><label for="inPw">비밀번호</label><input id="inPw" type="password" placeholder="처음이라면 쓰고 싶은 비밀번호" autocomplete="current-password"></div>
     <button class="btn" id="btnLogin">들어가기</button>
     <p class="hint">처음 들어오면 지금 쓴 비밀번호가 내 비밀번호가 돼요. 잊어버리면 선생님께 말하세요.</p>
@@ -278,14 +278,14 @@ textarea.note:focus{border-color:var(--gold)}
       <p class="hint">할 일을 적어 두고, 실제로 끝낸 것만 왼쪽 동그라미를 눌러 체크하세요. 체크한 개수도 선생님이 봅니다.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="noteCard">
       <h2>📖 오늘 공부한 내용</h2>
       <textarea class="note" id="inNote" maxlength="2000"
-        placeholder="어떤 과목을 어디까지 했는지 적어 보세요.&#10;&#10;예) 과학 3단원 상태변화 개념 정리하고 문제집 28~33쪽 풀었다. 융해와 기화가 헷갈려서 표로 다시 정리함. 내일은 틀린 6문제 다시 풀 예정."></textarea>
-      <p class="hint">무엇을, 어디까지, 어떻게 했는지 적을수록 별을 많이 받아요.</p>
+        placeholder="① 무엇을 어디까지 했는지&#10;② 어려웠던 것 / 아쉬웠던 것&#10;③ 다음에 고칠 점&#10;&#10;예)&#10;① 과학 3단원 상태변화 개념 정리하고 문제집 28~33쪽 풀었다. 영어 단어 60개 외우고 셀프 테스트함.&#10;② 융해랑 기화가 자꾸 헷갈려서 시간이 오래 걸렸다. 수학은 손도 못 댔다.&#10;③ 개념을 표로 정리해 놓고 시작할걸. 내일은 수학부터 먼저 하고, 틀린 6문제 다시 풀어 보겠다."></textarea>
+      <p class="hint">특히 <b>어려웠던 것</b>과 <b>다음에 고칠 점</b>을 적으면 별을 많이 받아요. 선생님 코멘트도 그 부분을 보고 써 줍니다.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="shotCard">
       <h2>📷 공부한 사진 <span id="shotCount" style="font-size:.85rem;color:var(--muted)"></span></h2>
       <div class="shots" id="shotBox"></div>
       <input type="file" id="shotInput" accept="image/*" multiple class="hidden">
@@ -387,7 +387,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyFFabiWo9orMXfBjXu4FUghraH-IRkK7SW1cnJW_j4GPfGxP4YEpGmcH6YtF_fJC3HtA/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzLOsC-svcLDorfCWFfSusDiRHSwywc9CO5VnDzf-pW_W6BYygxQ-ruIrNrfaQG_gz7Tw/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -583,30 +583,54 @@ function greeting() {
   return n + ', 오늘 뭐 했는지 남겨 볼까요';
 }
 
-/** 어제 분이 아직 열려 있으면 안내와 전환 버튼을 띄운다 */
+/** 지금 어느 날짜를 쓰고 있는지에 따라 화면을 바꾼다 */
 function paintPlanSwitch() {
   const box = $('#dayNotice'); box.innerHTML = '';
-  $('#planTitle').textContent = planDate === S.today ? '오늘 할 일' : '어제 할 일';
+  const isTom = planDate === S.tomorrow;
+  const isYes = planDate === S.yesterday;
+
+  $('#planTitle').textContent = isTom ? '내일 할 일' : (isYes ? '어제 할 일' : '오늘 할 일');
+  $('#noteCard').classList.toggle('hidden', isTom);
+  $('#shotCard').classList.toggle('hidden', isTom);
+  $('#btnSave').textContent = isTom ? '내일 계획 저장하기' : '플래너 저장하기';
+
+  if (isTom) {
+    const n = el('div', 'notice',
+      '<b>' + md(S.tomorrow) + '</b> 에 할 일을 미리 정하고 있어요. 공부한 내용과 사진은 내일 채우면 돼요. ');
+    const b = el('button', 'linkbtn', '오늘 플래너로 돌아가기');
+    b.style.marginTop = '4px'; b.style.display = 'block';
+    b.onclick = () => switchDate(S.today);
+    n.appendChild(b);
+    box.appendChild(n);
+    return;
+  }
 
   if (S.yesterdayOpen) {
-    const other = planDate === S.today ? S.yesterday : S.today;
-    const label = planDate === S.today
-      ? '어제(' + md(S.yesterday) + ') 플래너는 오늘 아침 ' + S.deadlineHour + '시까지 쓸 수 있어요.'
-      : '지금 어제(' + md(S.yesterday) + ') 플래너를 쓰고 있어요.';
+    const other = isYes ? S.today : S.yesterday;
+    const label = isYes
+      ? '지금 어제(' + md(S.yesterday) + ') 플래너를 쓰고 있어요.'
+      : '어제(' + md(S.yesterday) + ') 플래너는 오늘 아침 ' + S.deadlineHour + '시까지 쓸 수 있어요.';
     const n = el('div', 'notice', esc(label) + ' ');
-    const b = el('button', 'linkbtn', planDate === S.today ? '어제 것 마저 쓰기' : '오늘 것으로 돌아가기');
+    const b = el('button', 'linkbtn', isYes ? '오늘 것으로 돌아가기' : '어제 것 마저 쓰기');
     b.style.marginTop = '4px'; b.style.display = 'block';
     b.onclick = () => switchDate(other);
     n.appendChild(b);
     box.appendChild(n);
   }
 }
+
 function md(ds) { const p = ds.split('-'); return Number(p[1]) + '월 ' + Number(p[2]) + '일'; }
+
+function planOf(d) {
+  if (d === S.tomorrow) return S.plan.tomorrow;
+  if (d === S.yesterday) return S.plan.yesterday;
+  return S.plan.today;
+}
 
 async function switchDate(d) {
   if (dirty && !confirm('저장하지 않은 내용이 있어요. 그래도 옮길까요?')) return;
   planDate = d;
-  const src = d === S.today ? S.plan.today : S.plan.yesterday;
+  const src = planOf(d);
   todos = (src.todos || []).slice();
   photos = (src.photos || []).slice();
   $('#inNote').value = src.note || '';
@@ -702,8 +726,7 @@ async function removeShot(id) {
 }
 
 function syncPlanCache() {
-  const tgt = planDate === S.today ? S.plan.today : S.plan.yesterday;
-  tgt.photos = photos.slice();
+  planOf(planDate).photos = photos.slice();
 }
 
 /** 사진을 가로세로 900px 안으로 줄이고 JPEG 으로 바꿔서 올린다 */
@@ -785,15 +808,32 @@ $('#btnSave').onclick = async () => {
   const b = $('#btnSave'); b.disabled = true; b.textContent = '저장 중...';
   try {
     await api({ action: 'save', token: S.token, date: planDate, todos, note: $('#inNote').value });
-    const tgt = planDate === S.today ? S.plan.today : S.plan.yesterday;
+    const tgt = planOf(planDate);
     tgt.todos = todos.slice(); tgt.note = $('#inNote').value; tgt.photos = photos.slice();
     dirty = false;
     $('#savedMsg').textContent = '저장했어요 🐻';
     setTimeout(() => { $('#savedMsg').textContent = ''; }, 2200);
+    maybeGoTomorrow();
   } catch (e) { alert(e.message); }
   b.disabled = false; b.textContent = '플래너 저장하기';
 };
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/** 오늘 기록을 저장하면 하루 한 번, 내일 계획 세우기로 안내하고 넘겨 준다 */
+function maybeGoTomorrow() {
+  if (planDate !== S.today) return;
+  if (!$('#inNote').value.trim()) return;      // 공부한 내용을 쓴 다음에만
+  const k = 'sn-tomorrow-' + S.sid + '-' + S.today;
+  try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch (e) {}
+
+  toast('<p>오늘 기록 저장 완료! 이어서 <b>내일 할 일</b>을 미리 정해 볼까요?</p>' +
+        '<span>오늘 아쉬웠던 걸 내일 계획에 넣어 보세요</span>', 7000, 'nudge');
+
+  setTimeout(() => {
+    switchDate(S.tomorrow);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 700);
+}
 
 /* 탭 */
 document.querySelectorAll('.tabs button').forEach(btn => {
