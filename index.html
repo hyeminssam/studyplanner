@@ -139,6 +139,23 @@ textarea.note{width:100%;min-height:150px;padding:14px;border:2px solid var(--li
 textarea.note:focus{border-color:var(--gold)}
 .hint{font-size:.83rem;color:var(--muted);margin:8px 2px 0}
 
+/* 사진 */
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:4px}
+.shot{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:2px solid var(--line);
+      background:#F6EBD8;display:flex;align-items:center;justify-content:center}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .rm{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;
+          background:rgba(74,53,38,.78);color:#fff;font-size:.9rem;line-height:1;display:flex;
+          align-items:center;justify-content:center}
+.shot .spin{font-size:.74rem;color:var(--muted);font-family:var(--ui)}
+.addshot{aspect-ratio:1;border:2px dashed var(--line);border-radius:14px;background:#fff;
+         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+         color:var(--muted);font-family:var(--ui);font-size:.8rem}
+.addshot .ic{font-size:1.4rem}
+.shotfull{position:fixed;inset:0;background:rgba(74,53,38,.88);z-index:70;display:flex;
+          align-items:center;justify-content:center;padding:18px}
+.shotfull img{max-width:100%;max-height:100%;border-radius:14px}
+
 /* 저장 바 */
 .savebar{position:fixed;left:0;right:0;bottom:56px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));
          max-width:520px;margin:0 auto;background:linear-gradient(transparent,var(--honey) 28%)}
@@ -267,6 +284,13 @@ textarea.note:focus{border-color:var(--gold)}
         placeholder="어떤 과목을 어디까지 했는지 적어 보세요.&#10;&#10;예) 과학 3단원 상태변화 개념 정리하고 문제집 28~33쪽 풀었다. 융해와 기화가 헷갈려서 표로 다시 정리함. 내일은 틀린 6문제 다시 풀 예정."></textarea>
       <p class="hint">무엇을, 어디까지, 어떻게 했는지 적을수록 별을 많이 받아요.</p>
     </div>
+
+    <div class="card">
+      <h2>📷 공부한 사진 <span id="shotCount" style="font-size:.85rem;color:var(--muted)"></span></h2>
+      <div class="shots" id="shotBox"></div>
+      <input type="file" id="shotInput" accept="image/*" multiple class="hidden">
+      <p class="hint">안 올려도 괜찮아요. 올리면 선생님이 풀어 놓은 문제집이나 정리한 노트를 같이 보고 이야기해 줍니다.</p>
+    </div>
     <div style="height:8px"></div>
   </section>
 
@@ -363,7 +387,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzroDqZe5ru0m_g-TeZm60LrBv7JTRgHPVGRclddU8NM-m13lERyY_BDWPCKovaOLBbfA/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxe7rG5HvtATY84j9Ueb-acLj6elpee_mt6ubZz90KOGrgxunSHHLuBgYf2VjhO1-tKcg/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -413,6 +437,8 @@ function bearSVG(mood) {
 let S = null;          // 서버가 준 학생 정보
 let planDate = null;   // 지금 편집 중인 날짜
 let todos = [];
+let photos = [];
+const photoCache = {};
 let dirty = false;
 let adminPw = '';
 
@@ -454,6 +480,7 @@ function boot(r) {
   S = r;
   planDate = r.today;
   todos = (r.plan.today.todos || []).slice();
+  photos = (r.plan.today.photos || []).slice();
   $('#inNote').value = r.plan.today.note || '';
   dirty = false;
   paint();
@@ -491,6 +518,7 @@ function paint() {
   paintGoals();
   paintPlanSwitch();
   paintTodos();
+  paintShots();
 }
 
 function paintDday() {
@@ -556,9 +584,10 @@ async function switchDate(d) {
   planDate = d;
   const src = d === S.today ? S.plan.today : S.plan.yesterday;
   todos = (src.todos || []).slice();
+  photos = (src.photos || []).slice();
   $('#inNote').value = src.note || '';
   dirty = false;
-  paintPlanSwitch(); paintTodos();
+  paintPlanSwitch(); paintTodos(); paintShots();
 }
 
 function paintTodos() {
@@ -593,6 +622,110 @@ function paintTodos() {
     box.appendChild(row);
   });
 }
+
+/* ── 사진 ── */
+function paintShots() {
+  const box = $('#shotBox');
+  const max = S.photoMax || 5;
+  $('#shotCount').textContent = photos.length + ' / ' + max;
+  box.innerHTML = '';
+
+  photos.forEach(id => {
+    const w = el('div', 'shot');
+    const img = el('img');
+    img.alt = '올린 공부 사진';
+    img.onclick = () => openShot(id);
+    w.appendChild(img);
+    loadShot(id).then(src => { img.src = src; }).catch(() => {
+      w.innerHTML = '<span class="spin">못 불러옴</span>';
+    });
+    const rm = el('button', 'rm', '×');
+    rm.setAttribute('aria-label', '이 사진 지우기');
+    rm.onclick = e => { e.stopPropagation(); removeShot(id); };
+    w.appendChild(rm);
+    box.appendChild(w);
+  });
+
+  if (photos.length < max) {
+    const add = el('button', 'addshot', '<span class="ic">＋</span>사진 올리기');
+    add.onclick = () => $('#shotInput').click();
+    box.appendChild(add);
+  }
+}
+
+function loadShot(id) {
+  if (photoCache[id]) return Promise.resolve(photoCache[id]);
+  return api({ action: 'photo', token: S.token, id }).then(r => {
+    photoCache[id] = r.data;
+    return r.data;
+  });
+}
+
+function openShot(id) {
+  const v = el('div', 'shotfull', '<img src="' + photoCache[id] + '" alt="공부 사진 크게 보기">');
+  v.onclick = () => v.remove();
+  document.body.appendChild(v);
+}
+
+async function removeShot(id) {
+  if (!confirm('이 사진을 지울까요?')) return;
+  try {
+    const r = await api({ action: 'deletePhoto', token: S.token, date: planDate, id });
+    photos = r.photos;
+    syncPlanCache();
+    paintShots();
+  } catch (e) { alert(e.message); }
+}
+
+function syncPlanCache() {
+  const tgt = planDate === S.today ? S.plan.today : S.plan.yesterday;
+  tgt.photos = photos.slice();
+}
+
+/** 사진을 가로세로 900px 안으로 줄이고 JPEG 으로 바꿔서 올린다 */
+function shrink(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('사진을 읽지 못했어요.'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('사진을 읽지 못했어요.'));
+      img.onload = () => {
+        const k = Math.min(1, 900 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k);
+        c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.62));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+$('#shotInput').onchange = async e => {
+  const max = S.photoMax || 5;
+  const files = Array.from(e.target.files || []).slice(0, max - photos.length);
+  e.target.value = '';
+  if (!files.length) return;
+
+  const box = $('#shotBox');
+  const busy = el('div', 'shot', '<span class="spin">올리는 중</span>');
+  box.appendChild(busy);
+
+  for (const f of files) {
+    try {
+      const dataUrl = await shrink(f);
+      const r = await api({ action: 'upload', token: S.token, date: planDate, dataUrl });
+      photos = r.photos;
+      photoCache[photos[photos.length - 1]] = dataUrl;
+    } catch (err) { alert(err.message); break; }
+  }
+  busy.remove();
+  syncPlanCache();
+  paintShots();
+};
 
 $('#btnAddTodo').onclick = addTodo;
 $('#inTodo').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
@@ -629,7 +762,7 @@ $('#btnSave').onclick = async () => {
   try {
     await api({ action: 'save', token: S.token, date: planDate, todos, note: $('#inNote').value });
     const tgt = planDate === S.today ? S.plan.today : S.plan.yesterday;
-    tgt.todos = todos.slice(); tgt.note = $('#inNote').value;
+    tgt.todos = todos.slice(); tgt.note = $('#inNote').value; tgt.photos = photos.slice();
     dirty = false;
     $('#savedMsg').textContent = '저장했어요 🐻';
     setTimeout(() => { $('#savedMsg').textContent = ''; }, 2200);
@@ -686,7 +819,8 @@ async function loadHistory() {
       const li = el('li');
       const b = el('button');
       b.innerHTML = '<span class="d">' + md(d.date) + '</span>' +
-        '<span class="meta">할 일 ' + d.done + '/' + d.count + '</span>' +
+        '<span class="meta">할 일 ' + d.done + '/' + d.count +
+          (d.photos ? ' · 📷' + d.photos : '') + '</span>' +
         '<span class="right">' + (d.scored
           ? starHTML(d.star) + '<span class="meta">' + d.total.toFixed(1) + '</span>'
           : '<span class="meta">내일 아침 채점</span>') + '</span>';
@@ -725,7 +859,26 @@ async function openDay(date) {
     h += '<div class="card"><h2>📖 그날 공부한 내용</h2><p style="margin:0;white-space:pre-wrap">' +
       (d.note ? esc(d.note) : '<span class="empty">기록이 없어요.</span>') + '</p></div>';
 
+    if (d.photos && d.photos.length) {
+      h += '<div class="card"><h2>📷 그날 올린 사진</h2><div class="shots" id="dayShots"></div></div>';
+    }
+
     $('#dayDetail').innerHTML = h;
+
+    if (d.photos && d.photos.length) {
+      const box = $('#dayShots');
+      d.photos.forEach(id => {
+        const w = el('div', 'shot', '<span class="spin">불러오는 중</span>');
+        box.appendChild(w);
+        loadShot(id).then(src => {
+          w.innerHTML = '';
+          const img = el('img');
+          img.src = src; img.alt = '그날 올린 공부 사진';
+          img.onclick = () => openShot(id);
+          w.appendChild(img);
+        }).catch(() => { w.innerHTML = '<span class="spin">못 불러옴</span>'; });
+      });
+    }
   } catch (e) { $('#dayDetail').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
 }
 $('#btnCloseDay').onclick = () => $('#sheetDay').classList.add('hidden');
@@ -799,6 +952,38 @@ async function adminLoad() {
         body.appendChild(el('div', 'plan', esc(plan)));
         body.appendChild(el('div', '', esc(s.note || '(기록 없음)')));
         row.appendChild(body);
+
+        if (s.photos && s.photos.length) {
+          const open = el('button', 'btn small ghost', '📷 사진 ' + s.photos.length + '장 보기');
+          open.style.marginTop = '8px';
+          const gal = el('div', 'shots');
+          gal.style.display = 'none';
+          open.onclick = () => {
+            if (gal.dataset.loaded) {
+              const on = gal.style.display !== 'none';
+              gal.style.display = on ? 'none' : 'grid';
+              open.textContent = (on ? '📷 사진 ' : '📷 사진 접기 ') + s.photos.length + (on ? '장 보기' : '장');
+              return;
+            }
+            gal.dataset.loaded = '1';
+            gal.style.display = 'grid';
+            open.textContent = '📷 사진 접기 ' + s.photos.length + '장';
+            s.photos.forEach(id => {
+              const w = el('div', 'shot', '<span class="spin">불러오는 중</span>');
+              gal.appendChild(w);
+              api({ action: 'adminPhoto', pw: adminPw, id }).then(res => {
+                photoCache[id] = res.data;
+                w.innerHTML = '';
+                const img = el('img');
+                img.src = res.data; img.alt = s.name + ' 학생이 올린 사진';
+                img.onclick = () => openShot(id);
+                w.appendChild(img);
+              }).catch(() => { w.innerHTML = '<span class="spin">못 불러옴</span>'; });
+            });
+          };
+          row.appendChild(open);
+          row.appendChild(gal);
+        }
 
         if (s.star != null || s.ai || s.teacher) {
           const ta = el('textarea', 'tedit');
