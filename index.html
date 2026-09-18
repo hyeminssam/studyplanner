@@ -57,6 +57,7 @@ input,textarea{font-family:var(--body);font-size:16px;color:var(--ink)}
 .btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:0 4px 0 var(--line);color:var(--cocoa)}
 .btn.small{padding:10px 16px;width:auto;font-size:.94rem;border-radius:14px}
 .linkbtn{color:var(--muted);font-family:var(--body);font-size:.88rem;text-decoration:underline;margin-top:18px}
+.linkbtn.inline{margin-top:0}
 
 /* 상단 요약 */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
@@ -212,7 +213,7 @@ textarea.note:focus{border-color:var(--gold)}
     <div id="loginErr"></div>
     <div class="field"><label for="inSid">학번</label><input id="inSid" inputmode="numeric" placeholder="예: 10625" autocomplete="username"></div>
     <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 장원영"></div>
-    <div class="field"><label for="inPw">비밀번호</label><input id="inPw" type="password" placeholder="처음이라면 쓰고 싶은 비밀번호, 다른 친구가 알지 못하도록 작성(숫자4~6자리)" autocomplete="current-password"></div>
+    <div class="field"><label for="inPw">비밀번호</label><input id="inPw" type="password" placeholder="처음이라면 쓰고 싶은 비밀번호" autocomplete="current-password"></div>
     <button class="btn" id="btnLogin">들어가기</button>
     <p class="hint">처음 들어오면 지금 쓴 비밀번호가 내 비밀번호가 돼요. 잊어버리면 선생님께 말하세요.</p>
   </div>
@@ -302,6 +303,11 @@ textarea.note:focus{border-color:var(--gold)}
       <p style="margin:10px 0 0;font-size:.93rem">연속으로 기록한 날만큼 보너스가 붙어요. 2일 +0.3, 3일 +0.6, 5일 +1.0, 7일부터 +1.5예요.</p>
       <p style="margin:10px 0 0;font-size:.93rem">지난 기록보다 나아진 날에는 성장 보너스 +0.5가 따로 붙어요. 어제 선생님이 권한 걸 오늘 해내면 여기에 걸려요.</p>
     </div>
+    <p style="text-align:center;margin:0">
+      <button class="linkbtn inline" id="btnLogout">로그아웃</button>
+      <span style="color:var(--muted)">&nbsp;·&nbsp;</span>
+      <button class="linkbtn inline" id="btnTeacherFromApp">선생님용 화면</button>
+    </p>
   </section>
 
   <div class="savebar" id="saveBar">
@@ -434,7 +440,14 @@ $('#btnLogin').onclick = async () => {
 ['inSid','inName','inPw'].forEach(id => $('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnLogin').click(); }));
 
 $('#btnTeacherMode').onclick = () => screenTo('scAdmin');
-$('#btnBackFromAdmin').onclick = () => screenTo('scLogin');
+$('#btnBackFromAdmin').onclick = () => screenTo(S ? 'scApp' : 'scLogin');
+$('#btnTeacherFromApp').onclick = () => screenTo('scAdmin');
+$('#btnLogout').onclick = () => {
+  if (!confirm('로그아웃할까요? 다시 학번과 비밀번호를 넣어야 해요.')) return;
+  localStorage.removeItem(KEY);
+  dirty = false;
+  location.reload();
+};
 
 /* ═══════════════ 학생 앱 ═══════════════ */
 function boot(r) {
@@ -733,7 +746,14 @@ $('#btnAdminLogin').onclick = async () => {
 };
 $('#inAdminPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAdminLogin').click(); });
 $('#btnAdminLoad').onclick = adminLoad;
-$('#btnAdminOut').onclick = () => { adminPw = ''; location.reload(); };
+$('#btnAdminOut').onclick = () => {
+  adminPw = '';
+  $('#inAdminPw').value = '';
+  $('#adminBody').classList.add('hidden');
+  $('#adminGate').classList.remove('hidden');
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  screenTo(S ? 'scApp' : 'scLogin');
+};
 
 $('#btnAdminScore').onclick = async () => {
   const d = $('#adminDate').value;
@@ -875,10 +895,13 @@ function showScoreNudge() {
 
 /* ═══════════════ 자동 로그인 ═══════════════ */
 (async function () {
+  const wantAdmin = location.hash === '#teacher';
   const tk = localStorage.getItem(KEY);
-  if (!tk) return;
-  try { boot(await api({ action: 'me', token: tk })); }
-  catch (e) { localStorage.removeItem(KEY); }
+  if (tk) {
+    try { boot(await api({ action: 'me', token: tk })); }
+    catch (e) { localStorage.removeItem(KEY); }
+  }
+  if (wantAdmin) screenTo('scAdmin');
 })();
 </script>
 </body>
