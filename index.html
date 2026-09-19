@@ -405,7 +405,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyTnZBaw6hYIUYmdaTpj7fFmzythXz4zGcN-IU-Sg6O8tpGEMZvBYVnLYeaDPk6L9cNrw/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxwAQZFGhVFr3VGtGcw0NFr7Jpy6jfz2gXf42WThey5h9ROqsE2GANq3c1kUYWIRZQ/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -519,6 +519,18 @@ $('#btnLogout').onclick = () => {
 
 /* ═══════════════ 학생 앱 ═══════════════ */
 function boot(r) {
+  // 서버가 이전 버전이어도 화면이 깨지지 않도록 빈 칸을 채워 둔다
+  const blank = { todos: [], note: '', photos: [] };
+  r.plan = r.plan || {};
+  ['today', 'yesterday', 'tomorrow'].forEach(k => {
+    r.plan[k] = Object.assign({}, blank, r.plan[k] || {});
+  });
+  r.tomorrow = r.tomorrow || r.today;
+  r.podium = r.podium || [];
+  r.subjects = r.subjects || ['과학', '수학', '영어'];
+  r.goals = r.goals || {};
+  r.photoMax = r.photoMax || 5;
+
   S = r;
   planDate = r.today;
   todos = (r.plan.today.todos || []).slice();
@@ -645,9 +657,11 @@ function paintPlanSwitch() {
 function md(ds) { const p = ds.split('-'); return Number(p[1]) + '월 ' + Number(p[2]) + '일'; }
 
 function planOf(d) {
-  if (d === S.tomorrow) return S.plan.tomorrow;
-  if (d === S.yesterday) return S.plan.yesterday;
-  return S.plan.today;
+  let k = 'today';
+  if (d === S.tomorrow) k = 'tomorrow';
+  else if (d === S.yesterday) k = 'yesterday';
+  if (!S.plan[k]) S.plan[k] = { todos: [], note: '', photos: [] };
+  return S.plan[k];
 }
 
 async function switchDate(d) {
@@ -887,7 +901,7 @@ async function loadScope() {
   box.innerHTML = '<div class="card"><p class="empty">불러오는 중...</p></div>';
   try {
     const r = await api({ action: 'scope', token: S.token });
-    if (!r.subjects.length) {
+    if (!r.subjects || !r.subjects.length) {
       box.innerHTML = '<div class="card"><p class="empty">시험 범위가 아직 올라오지 않았어요. 선생님이 올리면 여기에 보여요.</p></div>';
       return;
     }
@@ -1035,18 +1049,21 @@ async function adminLoad() {
 
     // 누적 순위
     const rk = $('#adminRank');
-    if (!r.ranking.length) {
+    const ranking = r.ranking || null;
+    if (!ranking) {
+      rk.innerHTML = '<div class="err">서버가 아직 이전 버전이에요. Apps Script에서 <b>배포 → 배포 관리 → 편집 → 새 버전 → 배포</b>를 해 주세요.</div>';
+    } else if (!ranking.length) {
       rk.innerHTML = '<p class="empty">아직 채점된 기록이 없어요.</p>';
     } else {
       const count = {};
-      r.ranking.forEach(x => { count[x.rank] = (count[x.rank] || 0) + 1; });
-      rk.innerHTML = '<ul class="ranklist">' + r.ranking.map(x =>
+      ranking.forEach(x => { count[x.rank] = (count[x.rank] || 0) + 1; });
+      rk.innerHTML = '<ul class="ranklist">' + ranking.map(x =>
         '<li><span class="r' + (x.rank <= 3 ? ' top' : '') + '">' + x.rank + '등</span>' +
         '<span>' + esc(x.name) + '</span>' +
         '<span class="sid">' + esc(x.sid) + '</span>' +
         (count[x.rank] > 1 ? '<span class="tie">공동</span>' : '') +
         '<span class="pt">' + x.total.toFixed(1) + '</span></li>').join('') + '</ul>' +
-        '<p class="hint">제출하고 채점까지 끝난 학생만 나옵니다. 총 ' + r.ranking.length + '명.</p>';
+        '<p class="hint">제출하고 채점까지 끝난 학생만 나옵니다. 총 ' + ranking.length + '명.</p>';
     }
 
     box.innerHTML = '';
