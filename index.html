@@ -178,6 +178,27 @@ textarea.note:focus{border-color:var(--gold)}
 .scoreline{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .scoreline .num{font-family:var(--ui);color:var(--cocoa)}
 .bonuschip{background:var(--berry);color:#fff;font-family:var(--ui);font-size:.8rem;padding:2px 10px;border-radius:999px}
+.bonusmini{font-family:var(--ui);font-size:.78rem;color:var(--berry)}
+
+/* 점수 상자 */
+.scorebox .srow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 0;border-bottom:1px dashed var(--line)}
+.scorebox .srow:last-child{border-bottom:none}
+.scorebox .lab{flex:none;width:5.2em;font-family:var(--ui);font-size:.88rem;color:var(--muted)}
+.scorebox .big{font-family:var(--ui);font-size:1.35rem;color:var(--cocoa);line-height:1}
+.scorebox .of{font-family:var(--ui);font-size:.85rem;color:var(--muted)}
+.scorebox .bnote{width:100%;padding-left:calc(5.2em + 9px);font-size:.84rem;color:var(--muted);margin-top:-2px}
+.scorebox .total .big{font-size:1.55rem;color:#8A5A11}
+
+/* 교사용 채점 근거 */
+.why{background:#F5F1FB;border:2px solid #D9CFEA;border-radius:14px;padding:10px 12px;margin-top:8px;
+     font-size:.86rem;line-height:1.6;white-space:pre-wrap;color:#4A3A5E}
+.why b{font-family:var(--ui);font-weight:400;color:#5E4A7A}
+.clabel{display:block;font-family:var(--ui);font-size:.84rem;color:var(--cocoa);margin-top:12px}
+.clabel.ai{color:#2F6B53}
+.tedit.ai{background:#F4FBF7;border-color:#BFE3D2}
+.airef{background:#FFF7E4;border:1px dashed var(--gold);border-radius:12px;padding:8px 11px;margin-top:8px;
+       font-size:.84rem;color:#6B4318}
+.airef b{font-family:var(--ui);font-weight:400}
 
 /* 지난 기록 */
 .daylist{list-style:none;margin:0;padding:0}
@@ -191,6 +212,7 @@ textarea.note:focus{border-color:var(--gold)}
 /* 코멘트 */
 .comment{background:#FFF7E4;border:2px dashed var(--gold);border-radius:18px;padding:14px 16px;
          font-family:var(--hand);font-size:1.22rem;font-weight:700;line-height:1.6;color:#6B4318}
+.comment.ai{background:#EEF7F2;border-color:var(--mint);color:#2F5E4A}
 .comment .who{display:block;font-family:var(--ui);font-size:.8rem;font-weight:400;color:var(--muted);margin-bottom:4px}
 
 /* 시트 */
@@ -405,7 +427,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxwAQZFGhVFr3VGtGcw0NFr7Jpy6jfz2gXf42WThey5h9ROqsE2GANq3c1kUYWIRZQ/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxKuPn-L1wj5cmI5C38ULCyzjjwxm7vb6DBeZwkdb9YFwv2xWC_Shqr7OhxP3URUsNPYw/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -931,7 +953,8 @@ async function loadHistory() {
         '<span class="meta">할 일 ' + d.done + '/' + d.count +
           (d.photos ? ' · 📷' + d.photos : '') + '</span>' +
         '<span class="right">' + (d.scored
-          ? starHTML(d.star) + '<span class="meta">' + d.total.toFixed(1) + '</span>'
+          ? starHTML(d.star) + '<span class="meta">' + d.star.toFixed(1) + '</span>' +
+            (d.bonus > 0 ? '<span class="bonusmini">+' + d.bonus.toFixed(1) + '</span>' : '')
           : '<span class="meta">내일 아침 채점</span>') + '</span>';
       b.onclick = () => openDay(d.date);
       li.appendChild(b); box.appendChild(li);
@@ -946,16 +969,30 @@ async function openDay(date) {
     const d = await api({ action: 'day', token: S.token, date });
     let h = '<h2 class="ui" style="margin:0 0 12px;font-size:1.25rem;color:var(--cocoa)">' + md(d.date) + ' 기록</h2>';
 
-    h += '<div class="card"><div class="scoreline">' +
-      (d.star != null
-        ? starHTML(d.star) + '<span class="num">' + d.star.toFixed(1) + ' / 5</span>' +
-          (d.bonus > 0 ? '<span class="bonuschip">보너스 +' + d.bonus.toFixed(1) + '</span>' : '') +
-          '<span class="num" style="width:100%">합계 ' + d.total.toFixed(1) + '점</span>'
-        : '<span class="empty">아직 채점 전이에요. 다음날 아침 7시에 별점이 올라와요.</span>') +
-      '</div></div>';
+    if (d.star != null) {
+      const bonusParts = (d.bonusNote || '').split(' · ').filter(Boolean);
+      h += '<div class="card scorebox">' +
+        '<div class="srow"><span class="lab">플래너 점수</span>' + starHTML(d.star) +
+          '<span class="big">' + d.star.toFixed(1) + '</span><span class="of">/ 5</span></div>' +
+        '<div class="srow"><span class="lab">보너스</span>' +
+          (d.bonus > 0
+            ? '<span class="bonuschip">+' + d.bonus.toFixed(1) + '</span>' +
+              bonusParts.map(t => '<span class="bnote">' + esc(t) + '</span>').join('')
+            : '<span class="of">이날은 없어요</span>') + '</div>' +
+        '<div class="srow total"><span class="lab">합계</span><span class="big">' + d.total.toFixed(1) + '점</span></div>' +
+        '</div>';
+    } else {
+      h += '<div class="card"><p class="empty" style="margin:0">아직 채점 전이에요. 다음날 아침 7시에 별점이 올라와요.</p></div>';
+    }
 
-    if (d.comment) {
-      h += '<div class="comment"><span class="who">선생님 한마디</span>' + esc(d.comment) + '</div><div style="height:14px"></div>';
+    // 서버가 이전 버전이면 comment 하나만 온다
+    const tc = d.teacherComment !== undefined ? d.teacherComment : '';
+    const ac = d.aiComment !== undefined ? d.aiComment : (d.comment || '');
+    if (tc) {
+      h += '<div class="comment"><span class="who">✏️ 선생님 한마디</span>' + esc(tc) + '</div><div style="height:12px"></div>';
+    }
+    if (ac) {
+      h += '<div class="comment ai"><span class="who">🐻 AI 공부 코치</span>' + esc(ac) + '</div><div style="height:14px"></div>';
     }
 
     h += '<div class="card"><h2>✅ 그날의 할 일</h2>';
@@ -1074,7 +1111,11 @@ async function adminLoad() {
         '<span>' + esc(s.name) + '</span>' +
         '<span class="meta" style="color:var(--muted);font-size:.8rem">' + esc(s.sid) +
         (s.excluded ? ' · 집계 제외' : '') + '</span>' +
-        (s.star != null ? starHTML(s.star) + '<span class="meta" style="font-size:.82rem">' + s.total.toFixed(1) + '</span>' : '') +
+        (s.star != null
+          ? starHTML(s.star) + '<span class="meta" style="font-size:.82rem">' + s.star.toFixed(1) +
+            (s.bonus > 0 ? ' <span class="bonusmini">+' + s.bonus.toFixed(1) + '</span>' : '') +
+            ' = <b style="font-weight:400;color:var(--cocoa)">' + s.total.toFixed(1) + '</b></span>'
+          : '') +
         '<span class="rank">누적 ' + s.cumTotal.toFixed(1) + '점' + (s.cumRank ? ' · ' + s.cumRank + '등' : '') + '</span></div>';
 
       if (s.submitted) {
@@ -1118,21 +1159,42 @@ async function adminLoad() {
           row.appendChild(gal);
         }
 
-        if (s.star != null || s.ai || s.teacher) {
-          const ta = el('textarea', 'tedit');
-          ta.value = s.teacher || s.ai || '';
-          ta.placeholder = '코멘트를 고쳐 쓰면 학생 화면에 그대로 보여요';
-          const save = el('button', 'btn small', '코멘트 저장');
-          save.style.marginTop = '6px';
-          save.onclick = async () => {
-            save.textContent = '저장 중...';
-            try {
-              await api({ action: 'adminComment', pw: adminPw, date: r.date, sid: s.sid, comment: ta.value });
-              save.textContent = '저장됨 ✓';
-              setTimeout(() => { save.textContent = '코멘트 저장'; }, 1600);
-            } catch (e) { alert(e.message); save.textContent = '코멘트 저장'; }
+        // 채점 근거 (교사에게만 보임)
+        if (s.star != null) {
+          let w = '<b>🔍 채점 근거</b>\n' + esc(s.reason || '(근거 없음 — 이 기능을 넣기 전에 채점된 날입니다)');
+          if (s.bonusNote) w += '\n\n<b>🎁 보너스</b>\n' + esc(s.bonusNote.split(' · ').join('\n'));
+          row.appendChild(el('div', 'why', w));
+        }
+
+        // 코멘트 두 칸 — 둘 다 학생에게 보인다
+        {
+          const makeEditor = (field, label, value, placeholder) => {
+            row.appendChild(el('span', 'clabel' + (field === 'ai' ? ' ai' : ''), label));
+            const ta = el('textarea', 'tedit' + (field === 'ai' ? ' ai' : ''));
+            ta.value = value || '';
+            ta.placeholder = placeholder;
+            const save = el('button', 'btn small' + (field === 'ai' ? ' ghost' : ''), '저장');
+            save.style.marginTop = '6px';
+            save.onclick = async () => {
+              save.textContent = '저장 중...';
+              try {
+                await api({ action: 'adminComment', pw: adminPw, date: r.date, sid: s.sid, field, comment: ta.value });
+                if (field === 'ai') s.ai = ta.value; else s.teacher = ta.value;
+                save.textContent = '저장됨 ✓';
+                setTimeout(() => { save.textContent = '저장'; }, 1600);
+              } catch (e) { alert(e.message); save.textContent = '저장'; }
+            };
+            row.appendChild(ta); row.appendChild(save);
           };
-          row.appendChild(ta); row.appendChild(save);
+
+          makeEditor('teacher', '✏️ 선생님 한마디', s.teacher,
+            '채점 전에도 쓸 수 있어요. 저장하면 학생에게 바로 보여요. 비워 두면 안 보여요.');
+
+          if (s.ai || s.star != null) {
+            makeEditor('ai', '🐻 AI 공부 코치 (고쳐 쓸 수 있어요)', s.ai, 'AI 코멘트가 비어 있어요');
+          } else {
+            row.appendChild(el('span', 'clabel ai', '🐻 AI 공부 코치 — 채점하면 여기에 생겨요'));
+          }
         }
       } else {
         row.appendChild(el('div', 'tbody', '<span class="empty">제출하지 않았어요.</span>'));
