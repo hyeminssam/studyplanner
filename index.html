@@ -314,8 +314,9 @@ textarea.note:focus{border-color:var(--gold)}
     <div class="card" id="noteCard">
       <h2>📖 오늘 공부한 내용</h2>
       <textarea class="note" id="inNote" maxlength="2000"
-        placeholder="① 무엇을 어디까지 했는지&#10;② 어려웠던 것 / 아쉬웠던 것&#10;③ 다음에 고칠 점&#10;&#10;예)&#10;① 과학 3단원 상태변화 개념 정리하고 문제집 28~33쪽 풀었다. 영어 단어 60개 외우고 셀프 테스트함.&#10;② 융해랑 기화가 자꾸 헷갈려서 시간이 오래 걸렸다. 수학은 손도 못 댔다.&#10;③ 개념을 표로 정리해 놓고 시작할걸. 내일은 수학부터 먼저 하고, 틀린 6문제 다시 풀어 보겠다."></textarea>
+        placeholder="① 무엇을 어디까지 했는지&#10;② 어려웠던 것 / 아쉬웠던 것&#10;③ 다음에 고칠 점&#10;④ 공부 말고 오늘 한 활동 (있으면)&#10;&#10;예)&#10;① 과학 3단원 상태변화 개념 정리하고 문제집 28~33쪽 풀었다. 영어 단어 60개 외우고 셀프 테스트함.&#10;② 융해랑 기화가 자꾸 헷갈려서 시간이 오래 걸렸다. 수학은 손도 못 댔다.&#10;③ 개념을 표로 정리해 놓고 시작할걸. 내일은 수학부터 먼저 하고, 틀린 6문제 다시 풀어 보겠다.&#10;④ 저녁에 줄넘기 500개 했다. 머리가 맑아져서 단어가 더 잘 외워졌다."></textarea>
       <p class="hint">특히 <b>어려웠던 것</b>과 <b>다음에 고칠 점</b>을 적으면 별을 많이 받아요. 길게 쓴다고 점수가 오르지 않아요. 짧아도 무엇을 했는지 분명하면 됩니다.</p>
+      <p class="hint">운동, 그림, 악기, 독서처럼 공부 말고 오늘 한 활동도 적어 주세요. 선생님이 같이 봐 주고, 점수에도 조금 더해져요. 안 적었다고 깎이지는 않아요.</p>
       <p class="hint" style="color:#9B3247"><b>이건 보여주기 위한 공부가 아니에요.</b> 실제로 한 것만 적어 주세요. 안 한 걸 적으면 나만 손해예요.</p>
     </div>
 
@@ -323,7 +324,7 @@ textarea.note:focus{border-color:var(--gold)}
       <h2>📷 공부한 사진 <span id="shotCount" style="font-size:.85rem;color:var(--muted)"></span></h2>
       <div class="shots" id="shotBox"></div>
       <input type="file" id="shotInput" accept="image/*" multiple class="hidden">
-      <p class="hint">안 올려도 괜찮아요. 올리면 선생님이 풀어 놓은 문제집이나 정리한 노트를 같이 보고 이야기해 줍니다.</p>
+      <p class="hint">안 올려도 괜찮아요. 풀어 놓은 문제집, 정리한 노트는 물론 그린 그림이나 운동한 모습도 올려도 돼요. 같이 보고 이야기해 줄게요.</p>
     </div>
     <div style="height:8px"></div>
   </section>
@@ -358,6 +359,7 @@ textarea.note:focus{border-color:var(--gold)}
     <div class="card">
       <h2>⭐ 별점은 이렇게 정해져요</h2>
       <p style="margin:0;font-size:.93rem">매일 아침 7시에 전날 기록을 읽고 별점이 매겨져요. 무엇을 어디까지 했는지 분명할수록, 스스로 계획해서 한 공부일수록 별이 많아요. 글이 길다고 점수가 오르지는 않아요.</p>
+      <p style="margin:10px 0 0;font-size:.93rem">운동이나 그림처럼 공부 말고 한 활동도 적으면 점수에 조금 더해져요. 공부가 중심이고, 활동은 점수를 올려 줄 수만 있어요.</p>
       <p style="margin:10px 0 0;font-size:.93rem">연속으로 기록한 날만큼 보너스가 붙어요. 2일 +0.3, 3일 +0.6, 5일 +1.0, 7일부터 +1.5예요.</p>
       <p style="margin:10px 0 0;font-size:.93rem">지난 기록보다 확실히 나아진 날에는 성장 보너스 +0.5가 붙어요. 어제 선생님이 권한 걸 오늘 해냈거나, 미루던 과목을 드디어 시작한 날처럼 누가 봐도 달라진 경우에만 주어져요.</p>
     </div>
@@ -427,7 +429,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxKuPn-L1wj5cmI5C38ULCyzjjwxm7vb6DBeZwkdb9YFwv2xWC_Shqr7OhxP3URUsNPYw/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxBzJ9yECjUyXKWVQIA3bEGMsK2pBc-AnQbyQvKZOhrbb2q3RLit-RPmLZPKsrKHMiDVA/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -955,7 +957,7 @@ async function loadHistory() {
         '<span class="right">' + (d.scored
           ? starHTML(d.star) + '<span class="meta">' + d.star.toFixed(1) + '</span>' +
             (d.bonus > 0 ? '<span class="bonusmini">+' + d.bonus.toFixed(1) + '</span>' : '')
-          : '<span class="meta">내일 아침 채점</span>') + '</span>';
+          : '<span class="meta">' + (d.empty ? '내용 없음 · 채점 안 함' : '내일 아침 채점') + '</span>') + '</span>';
       b.onclick = () => openDay(d.date);
       li.appendChild(b); box.appendChild(li);
     });
@@ -1110,7 +1112,8 @@ async function adminLoad() {
         '<div class="thead"><span class="dot' + (s.submitted ? ' on' : '') + '"></span>' +
         '<span>' + esc(s.name) + '</span>' +
         '<span class="meta" style="color:var(--muted);font-size:.8rem">' + esc(s.sid) +
-        (s.excluded ? ' · 집계 제외' : '') + '</span>' +
+        (s.excluded ? ' · 집계 제외' : '') +
+        (s.submitted && s.empty ? ' · <span style="color:#9B3247">내용 없음, 채점 제외</span>' : '') + '</span>' +
         (s.star != null
           ? starHTML(s.star) + '<span class="meta" style="font-size:.82rem">' + s.star.toFixed(1) +
             (s.bonus > 0 ? ' <span class="bonusmini">+' + s.bonus.toFixed(1) + '</span>' : '') +
