@@ -76,6 +76,8 @@ input,textarea{font-family:var(--body);font-size:16px;color:var(--ink)}
 .quote.nudge{background:var(--gold);color:#5B3A16;box-shadow:0 8px 24px rgba(216,156,44,.4)}
 .quote.nudge p{font-family:var(--ui);font-weight:400;font-size:1.06rem}
 .quote.nudge span{opacity:.8}
+.quote.special{background:var(--berry);color:#fff;box-shadow:0 8px 24px rgba(255,143,163,.45)}
+.quote.special span{opacity:.95;font-family:var(--hand);font-size:1.12rem;font-weight:700;margin-top:7px}
 .quote.out{animation:quoteOut .6s ease-in forwards}
 @keyframes quoteIn{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes quoteOut{to{opacity:0;transform:translate(-50%,-14px)}}
@@ -235,6 +237,23 @@ textarea.note:focus{border-color:var(--gold)}
 .codelist li{display:flex;gap:10px;align-items:center;padding:7px 2px;border-bottom:1px dashed var(--line);font-family:var(--ui)}
 .codelist li:last-child{border-bottom:none}
 .codelist .c{margin-left:auto;font-size:1.15rem;letter-spacing:2px;color:var(--cocoa)}
+/* 특별 보너스 */
+.spform .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.spform input,.spform textarea{width:100%;padding:10px 11px;border:2px solid var(--line);border-radius:12px;background:#fff}
+.spform textarea{min-height:70px;resize:vertical}
+.spform label{display:block;font-family:var(--ui);font-size:.84rem;color:var(--cocoa);margin:8px 0 4px}
+.splist{list-style:none;margin:10px 0 0;padding:0}
+.splist li{padding:10px 2px;border-bottom:1px dashed var(--line)}
+.splist li:last-child{border-bottom:none}
+.splist .top{display:flex;align-items:center;gap:8px;font-family:var(--ui)}
+.splist .pt{background:var(--berry);color:#fff;font-size:.78rem;padding:1px 9px;border-radius:999px}
+.splist .when{color:var(--muted);font-size:.8rem}
+.splist .msg{font-size:.86rem;color:#6B4318;margin-top:4px;white-space:pre-wrap}
+.spbanner{background:linear-gradient(90deg,#FFE4EA,#FFF1D6);border:2px solid var(--berry);border-radius:18px;
+          padding:11px 15px;margin-bottom:14px;font-family:var(--ui);color:#8E2F48;font-size:.95rem}
+.spcard{background:#FFF0F3;border:2px solid var(--berry);border-radius:18px;padding:14px 16px;margin-bottom:14px}
+.spcard .who{display:block;font-family:var(--ui);font-size:.84rem;color:#8E2F48;margin-bottom:5px}
+.spcard .msg{font-family:var(--hand);font-size:1.22rem;font-weight:700;line-height:1.6;color:#6B2A3A;white-space:pre-wrap}
 .ranklist{list-style:none;margin:0;padding:0}
 .ranklist li{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed var(--line);
              font-family:var(--ui)}
@@ -303,6 +322,7 @@ textarea.note:focus{border-color:var(--gold)}
     </div>
 
     <div class="dday" id="ddayBox"></div>
+    <div id="spBanner"></div>
 
     <div class="card">
       <h2>🎯 내 목표 점수</h2>
@@ -427,6 +447,25 @@ textarea.note:focus{border-color:var(--gold)}
     <div id="adminSummary"></div>
 
     <div class="card">
+      <h2>🎁 특별 보너스</h2>
+      <p class="hint" style="margin-top:0">정한 날짜에 기록을 올린 학생 <b>모두에게</b> 보너스가 자동으로 더해져요. 이미 채점된 날짜면 저장하는 즉시 반영되고, 아직이면 그날 아침 채점할 때 더해집니다. 빈 기록("없음" 등)은 받지 못해요.</p>
+      <div class="spform">
+        <label for="spName">이름 (학생 보너스 내역에 보여요)</label>
+        <input id="spName" maxlength="30" placeholder="예: 추석 당일 보너스">
+        <div class="row2">
+          <div><label for="spFrom">시작 날짜</label><input type="date" id="spFrom"></div>
+          <div><label for="spTo">끝 날짜 (하루면 비워 두기)</label><input type="date" id="spTo"></div>
+        </div>
+        <label for="spPoint">점수 (0.1 ~ 3.0)</label>
+        <input id="spPoint" type="number" step="0.1" min="0.1" max="3" placeholder="예: 0.5" inputmode="decimal">
+        <label for="spMsg">학생에게 보일 멘트 (보너스를 받은 학생에게만 보여요)</label>
+        <textarea id="spMsg" maxlength="300" placeholder="예: 추석에도 책상 앞에 앉은 여러분, 정말 대단해요! 선생님이 특별 점수를 드립니다 🌕"></textarea>
+        <button class="btn small" id="btnSpAdd" style="margin-top:10px">보너스 만들기</button>
+      </div>
+      <ul class="splist" id="spList"></ul>
+    </div>
+
+    <div class="card">
       <h2>🏆 지금까지의 누적 순위 <button class="btn small ghost" id="btnToggleRank" style="margin-left:auto">펼치기</button></h2>
       <div id="adminRank" class="hidden"></div>
     </div>
@@ -443,7 +482,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxI07KvvS2TWLHwbJzclLMiR0bNe0XoiyRf8mGLTJfG-6Dz_y53kmXVlbsZKyQhj6CWbw/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxikwsA_Nk-rWKljOcb8sCZO4Yvo6pmaiXzZmD8wNr3yPlWZT5-ySI1VjaxvcC4pO8TRA/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -603,6 +642,7 @@ function boot(r) {
   paint();
   screenTo('scApp');
   showQuote();
+  showSpecialNudge();
   showScoreNudge();
 }
 
@@ -637,6 +677,11 @@ function paint() {
 
   paintDday();
   paintGoals();
+  const sp = S.todaySpecial || [];
+  $('#spBanner').innerHTML = sp.length
+    ? '<div class="spbanner">🎁 오늘은 ' + sp.map(x => esc(x.name) + ' +' + Number(x.point).toFixed(1)).join(', ') +
+      ' 날이에요! 오늘 기록을 남기면 보너스를 받아요.</div>'
+    : '';
   paintPlanSwitch();
   paintTodos();
   paintShots();
@@ -1026,6 +1071,11 @@ async function openDay(date) {
       h += '<div class="card"><p class="empty" style="margin:0">아직 채점 전이에요. 다음날 아침 7시에 별점이 올라와요.</p></div>';
     }
 
+    (d.specials || []).forEach(x => {
+      h += '<div class="spcard"><span class="who">🎁 ' + esc(x.name) + ' +' + Number(x.point).toFixed(1) + '</span>' +
+           (x.message ? '<div class="msg">' + esc(x.message) + '</div>' : '') + '</div>';
+    });
+
     // 서버가 이전 버전이면 comment 하나만 온다
     const tc = d.teacherComment !== undefined ? d.teacherComment : '';
     const ac = d.aiComment !== undefined ? d.aiComment : (d.comment || '');
@@ -1081,6 +1131,7 @@ $('#btnAdminLogin').onclick = async () => {
     $('#adminGate').classList.add('hidden');
     $('#adminBody').classList.remove('hidden');
     $('#adminDate').value = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10);
+    $('#spFrom').value = $('#adminDate').value;
     adminLoad();
   } catch (e) { showErr('#adminErr', e.message); }
 };
@@ -1099,6 +1150,46 @@ $('#adminRows').addEventListener('click', async e => {
     adminLoad();
   } catch (err) { alert(err.message); }
 });
+/* ── 특별 보너스 ── */
+function paintSpecialList(rules) {
+  const ul = $('#spList');
+  if (!rules.length) { ul.innerHTML = '<li class="empty">아직 만든 보너스가 없어요.</li>'; return; }
+  ul.innerHTML = rules.map(x =>
+    '<li><div class="top"><span>' + esc(x.name) + '</span><span class="pt">+' + Number(x.point).toFixed(1) + '</span>' +
+    '<span class="when">' + md(x.from) + (x.to && x.to !== x.from ? ' ~ ' + md(x.to) : '') + '</span>' +
+    '<button class="linkbtn inline spdel" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '" style="margin-left:auto;font-size:.8rem">삭제</button></div>' +
+    (x.message ? '<div class="msg">' + esc(x.message) + '</div>' : '<div class="msg" style="color:var(--muted)">(멘트 없음)</div>') +
+    '</li>').join('');
+}
+
+$('#btnSpAdd').onclick = async () => {
+  const name = $('#spName').value.trim(), from = $('#spFrom').value, to = $('#spTo').value || from;
+  const point = Number($('#spPoint').value), message = $('#spMsg').value.trim();
+  if (!name) return alert('보너스 이름을 적어 주세요.');
+  if (!from) return alert('시작 날짜를 골라 주세요.');
+  if (!(point >= 0.1 && point <= 3)) return alert('점수는 0.1에서 3.0 사이로 적어 주세요.');
+  const b = $('#btnSpAdd'); b.disabled = true; b.textContent = '저장 중...';
+  try {
+    const r = await api({ action: 'adminBonusAdd', pw: adminPw, name, from, to, point, message });
+    paintSpecialList(r.rules);
+    ['#spName', '#spTo', '#spPoint', '#spMsg'].forEach(id => { $(id).value = ''; });
+    alert('"' + name + '" 보너스를 만들었어요.' + (r.applied ? '\n이미 채점된 ' + r.applied + '명에게 바로 반영했어요.' : '\n그날 아침 채점할 때 자동으로 더해져요.'));
+    adminLoad();
+  } catch (e) { alert(e.message); }
+  b.disabled = false; b.textContent = '보너스 만들기';
+};
+
+$('#spList').addEventListener('click', async e => {
+  const btn = e.target.closest('.spdel');
+  if (!btn) return;
+  if (!confirm('"' + btn.dataset.name + '" 보너스를 지울까요?\n이미 받은 학생들 점수에서도 빠집니다.')) return;
+  try {
+    const r = await api({ action: 'adminBonusDelete', pw: adminPw, id: btn.dataset.id });
+    paintSpecialList(r.rules);
+    adminLoad();
+  } catch (err) { alert(err.message); }
+});
+
 $('#btnToggleRank').onclick = () => {
   const on = !$('#adminRank').classList.contains('hidden');
   $('#adminRank').classList.toggle('hidden', on);
@@ -1137,6 +1228,8 @@ async function adminLoad() {
       '<div class="stat"><div class="n">' + r.submittedCount + '<small>명</small></div><div class="k">제출</div></div>' +
       '<div class="stat"><div class="n">' + (r.classSize - r.submittedCount) + '<small>명</small></div><div class="k">미제출</div></div>' +
       '<div class="stat"><div class="n">' + (r.scored ? '완료' : '전') + '</div><div class="k">채점</div></div></div>';
+
+    paintSpecialList(r.bonusRules || []);
 
     // 누적 순위
     const rk = $('#adminRank');
@@ -1320,6 +1413,18 @@ function showQuote() {
   const seed = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
   const q = QUOTES[seed % QUOTES.length];
   toast('<p>' + esc(q[0]) + '</p>' + (q[1] ? '<span>' + esc(q[1]) + '</span>' : ''), 6000);
+}
+
+/** 특별 보너스를 받았으면 한 번 알려 준다 (선생님이 쓴 멘트와 함께) */
+function showSpecialNudge() {
+  const n = S.specialNews;
+  if (!n) return;
+  const k = 'sn-special-' + S.sid + '-' + n.date + '-' + n.point;
+  try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch (e) {}
+  toast('<p>🎁 ' + esc(n.name) + ' +' + Number(n.point).toFixed(1) + '</p>' +
+        (n.message ? '<span style="white-space:pre-wrap">' + esc(n.message) + '</span>' : ''),
+        9000, 'nudge special',
+        () => document.querySelector('.tabs button[data-tab="History"]').click());
 }
 
 /** 채점된 기록이 있으면 하루 한 번 지난 기록 탭을 보라고 알려 준다 */
