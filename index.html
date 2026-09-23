@@ -228,6 +228,13 @@ textarea.note:focus{border-color:var(--gold)}
         font-size:.9rem;margin-bottom:12px}
 
 /* 교사 화면 */
+.pwtag{font-family:var(--ui);font-size:.72rem;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pwtag.none{background:#FFE7E9;color:#9B3247}
+.pwtag.temp{background:#EEF9F3;color:#2F6B53;letter-spacing:.5px}
+.codelist{list-style:none;margin:0;padding:0}
+.codelist li{display:flex;gap:10px;align-items:center;padding:7px 2px;border-bottom:1px dashed var(--line);font-family:var(--ui)}
+.codelist li:last-child{border-bottom:none}
+.codelist .c{margin-left:auto;font-size:1.15rem;letter-spacing:2px;color:var(--cocoa)}
 .ranklist{list-style:none;margin:0;padding:0}
 .ranklist li{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed var(--line);
              font-family:var(--ui)}
@@ -263,9 +270,15 @@ textarea.note:focus{border-color:var(--gold)}
     <div id="loginErr"></div>
     <div class="field"><label for="inSid">학번</label><input id="inSid" inputmode="numeric" placeholder="예: 10625" autocomplete="username"></div>
     <div class="field"><label for="inName">이름</label><input id="inName" placeholder="예: 장원영"></div>
-    <div class="field"><label for="inPw">비밀번호</label><input id="inPw" type="password" placeholder="처음이라면 쓰고 싶은 비밀번호" autocomplete="current-password"></div>
+    <div class="field"><label for="inPw" id="pwLabel">비밀번호</label><input id="inPw" type="password" placeholder="처음이면 새로 정할 비밀번호 (4자리 이상)" autocomplete="current-password"></div>
+    <div id="newPwBox" class="hidden">
+      <div class="notice">임시 코드가 맞아요! 이제 <b>나만 아는 새 비밀번호</b>를 정해 주세요. 다음부터는 이 비밀번호로 들어와요.</div>
+      <div class="field"><label for="inNewPw">새 비밀번호</label><input id="inNewPw" type="password" placeholder="4자리 이상, 친구가 모르는 것" autocomplete="new-password"></div>
+      <div class="field"><label for="inNewPw2">새 비밀번호 한 번 더</label><input id="inNewPw2" type="password" autocomplete="new-password"></div>
+    </div>
     <button class="btn" id="btnLogin">들어가기</button>
-    <p class="hint">처음 들어오면 지금 쓴 비밀번호가 내 비밀번호가 돼요. 잊어버리면 선생님께 말하세요.</p>
+    <p class="hint">처음 들어오면 지금 쓴 비밀번호가 내 비밀번호가 돼요. 1234, 1111, 내 학번처럼 쉬운 건 쓸 수 없어요. 친구가 알 수 없는 걸로 정하세요.</p>
+    <p class="hint">비밀번호를 잊어버리면 선생님께 <b>임시 코드</b>를 받아서 비밀번호 칸에 넣으세요. 그다음 새 비밀번호를 정하게 돼요.</p>
   </div>
   <button class="linkbtn" id="btnTeacherMode">선생님용 화면</button>
 </section>
@@ -324,7 +337,8 @@ textarea.note:focus{border-color:var(--gold)}
       <h2>📷 공부한 사진 <span id="shotCount" style="font-size:.85rem;color:var(--muted)"></span></h2>
       <div class="shots" id="shotBox"></div>
       <input type="file" id="shotInput" accept="image/*" multiple class="hidden">
-      <p class="hint">안 올려도 괜찮아요. 풀어 놓은 문제집, 정리한 노트는 물론 그린 그림이나 운동한 모습도 올려도 돼요. 같이 보고 이야기해 줄게요.</p>
+      <p class="hint">안 올려도 괜찮아요. 풀어 놓은 문제집, 정리한 노트는 물론 그린 그림이나 운동한 기록도 올려도 돼요. 같이 보고 이야기해 줄게요.</p>
+      <p class="hint">내 얼굴이나 친구 얼굴, 이름·주소가 보이는 사진은 올리지 말아 주세요.</p>
     </div>
     <div style="height:8px"></div>
   </section>
@@ -429,7 +443,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxBzJ9yECjUyXKWVQIA3bEGMsK2pBc-AnQbyQvKZOhrbb2q3RLit-RPmLZPKsrKHMiDVA/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxI07KvvS2TWLHwbJzclLMiR0bNe0XoiyRf8mGLTJfG-6Dz_y53kmXVlbsZKyQhj6CWbw/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -517,19 +531,42 @@ function screenTo(id) {
 /* ═══════════════ 로그인 ═══════════════ */
 $('#bearLogin').innerHTML = bearSVG('idle');
 
+let settingNewPw = false;   // 임시 코드 확인이 끝나 새 비밀번호를 정하는 단계인가
+
 $('#btnLogin').onclick = async () => {
   showErr('#loginErr', '');
   const sid = $('#inSid').value.trim(), name = $('#inName').value.trim(), pw = $('#inPw').value.trim();
   if (!sid || !name || !pw) return showErr('#loginErr', '학번, 이름, 비밀번호를 모두 채워 주세요.');
-  $('#btnLogin').textContent = '확인 중...';
+
+  const req = { action: 'login', sid, name, pw };
+  if (settingNewPw) {
+    const a = $('#inNewPw').value.trim(), b = $('#inNewPw2').value.trim();
+    if (!a) return showErr('#loginErr', '새 비밀번호를 적어 주세요.');
+    if (a !== b) return showErr('#loginErr', '새 비밀번호 두 칸이 서로 달라요.');
+    req.newPw = a;
+  }
+
+  const btn = $('#btnLogin');
+  btn.disabled = true; btn.textContent = '확인 중...';
   try {
-    const r = await api({ action: 'login', sid, name, pw });
+    const r = await api(req);
+    if (r.needNewPw) {
+      // 임시 코드가 맞았다 → 새 비밀번호 칸을 연다
+      settingNewPw = true;
+      ['inSid', 'inName', 'inPw'].forEach(id => { $('#' + id).readOnly = true; });
+      $('#pwLabel').textContent = '임시 코드';
+      $('#newPwBox').classList.remove('hidden');
+      $('#inNewPw').focus();
+      btn.disabled = false; btn.textContent = '새 비밀번호로 시작하기';
+      return;
+    }
     localStorage.setItem(KEY, r.token);
     boot(r);
   } catch (e) { showErr('#loginErr', e.message); }
-  $('#btnLogin').textContent = '들어가기';
+  btn.disabled = false;
+  btn.textContent = settingNewPw ? '새 비밀번호로 시작하기' : '들어가기';
 };
-['inSid','inName','inPw'].forEach(id => $('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnLogin').click(); }));
+['inSid','inName','inPw','inNewPw','inNewPw2'].forEach(id => $('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnLogin').click(); }));
 
 $('#btnTeacherMode').onclick = () => screenTo('scAdmin');
 $('#btnBackFromAdmin').onclick = () => screenTo(S ? 'scApp' : 'scLogin');
@@ -543,6 +580,8 @@ $('#btnLogout').onclick = () => {
 
 /* ═══════════════ 학생 앱 ═══════════════ */
 function boot(r) {
+  // 서버가 새 형식의 토큰을 주면 바꿔 저장한다 (예전 토큰 → 새 토큰)
+  try { if (r.token) localStorage.setItem(KEY, r.token); } catch (e) {}
   // 서버가 이전 버전이어도 화면이 깨지지 않도록 빈 칸을 채워 둔다
   const blank = { todos: [], note: '', photos: [] };
   r.plan = r.plan || {};
@@ -1047,6 +1086,19 @@ $('#btnAdminLogin').onclick = async () => {
 };
 $('#inAdminPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAdminLogin').click(); });
 $('#btnAdminLoad').onclick = adminLoad;
+
+// 학생 비밀번호 초기화 — 시트에는 암호화된 값만 있어서 선생님도 볼 수 없으므로 초기화로 해결한다
+$('#adminRows').addEventListener('click', async e => {
+  const b = e.target.closest('.pwreset');
+  if (!b) return;
+  const { sid, name } = b.dataset;
+  if (!confirm(name + '(' + sid + ') 학생에게 새 임시 코드를 발급할까요?\n\n· 지금 쓰던 비밀번호는 더 이상 안 되고\n· 이 학생이 로그인해 있던 모든 기기에서 로그아웃됩니다.')) return;
+  try {
+    const r = await api({ action: 'adminResetPw', pw: adminPw, sid });
+    alert(name + ' 학생 임시 코드: ' + r.code + '\n\n학생에게 직접(말이나 쪽지로) 알려 주세요.\n이 코드로 들어가서 새 비밀번호를 정하게 됩니다.\n\n코드는 학생 목록에도 계속 표시돼요.');
+    adminLoad();
+  } catch (err) { alert(err.message); }
+});
 $('#btnToggleRank').onclick = () => {
   const on = !$('#adminRank').classList.contains('hidden');
   $('#adminRank').classList.toggle('hidden', on);
@@ -1114,6 +1166,10 @@ async function adminLoad() {
         '<span class="meta" style="color:var(--muted);font-size:.8rem">' + esc(s.sid) +
         (s.excluded ? ' · 집계 제외' : '') +
         (s.submitted && s.empty ? ' · <span style="color:#9B3247">내용 없음, 채점 제외</span>' : '') + '</span>' +
+        (s.pwState === 'none' ? ' <span class="pwtag none">로그인 전</span>' : '') +
+        (s.pwState === 'temp' ? ' <span class="pwtag temp">임시 코드 ' + esc(s.tempCode) + '</span>' : '') +
+        (s.pwState === 'none' ? '' :
+          '<button class="linkbtn inline pwreset" data-sid="' + esc(s.sid) + '" data-name="' + esc(s.name) + '" style="font-size:.76rem;margin-left:6px">비번 초기화</button>') +
         (s.star != null
           ? starHTML(s.star) + '<span class="meta" style="font-size:.82rem">' + s.star.toFixed(1) +
             (s.bonus > 0 ? ' <span class="bonusmini">+' + s.bonus.toFixed(1) + '</span>' : '') +
