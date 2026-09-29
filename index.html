@@ -254,6 +254,13 @@ textarea.note:focus{border-color:var(--gold)}
 .spcard{background:#FFF0F3;border:2px solid var(--berry);border-radius:18px;padding:14px 16px;margin-bottom:14px}
 .spcard .who{display:block;font-family:var(--ui);font-size:.84rem;color:#8E2F48;margin-bottom:5px}
 .spcard .msg{font-family:var(--hand);font-size:1.22rem;font-weight:700;line-height:1.6;color:#6B2A3A;white-space:pre-wrap}
+.todaylist{list-style:none;margin:0;padding:0}
+.todaylist li{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px dashed var(--line);font-family:var(--ui);font-size:.94rem}
+.todaylist li:last-child{border-bottom:none}
+.todaylist .sid{color:var(--muted);font-size:.78rem}
+.todaylist .sc{margin-left:auto;color:var(--cocoa)}
+.todaylist .sc.wait{color:var(--muted);font-size:.8rem}
+.todaylist .sc.none{color:#9B3247;font-size:.8rem}
 .ranklist{list-style:none;margin:0;padding:0}
 .ranklist li{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed var(--line);
              font-family:var(--ui)}
@@ -321,6 +328,7 @@ textarea.note:focus{border-color:var(--gold)}
       <ol id="hall"></ol>
     </div>
 
+    <div id="demoBanner"></div>
     <div class="dday" id="ddayBox"></div>
     <div id="spBanner"></div>
 
@@ -440,6 +448,12 @@ textarea.note:focus{border-color:var(--gold)}
   </div>
 
   <div id="adminBody" class="hidden">
+    <div class="card">
+      <h2>📋 오늘 제출 <span id="todayCount" style="font-size:.85rem;color:var(--muted)"></span>
+        <button class="btn small ghost" id="btnToggleToday" style="margin-left:auto">접기</button></h2>
+      <div id="todayBox"><p class="empty">불러오는 중...</p></div>
+    </div>
+
     <div class="datepick">
       <input type="date" id="adminDate">
       <button class="btn small ghost" id="btnAdminLoad">보기</button>
@@ -675,6 +689,10 @@ function paint() {
     : '오늘 플래너를 쓰면 내일 아침 첫 별점을 받아요';
   $('#bearRank').innerHTML = bearSVG(S.myRank && S.myRank <= 3 ? 'happy' : 'idle');
 
+  $('#demoBanner').innerHTML = S.demo
+    ? '<div class="notice" style="background:#F5F1FB;border-color:#D9CFEA;color:#4A3A5E">🧪 <b>체험용 계정</b>이에요. 할 일 추가, 체크, 기록 쓰기, 사진 올리기, 저장까지 마음껏 눌러 보세요. ' +
+      '입력한 내용은 <b>어디에도 저장되지 않고</b>, 새로고침하면 처음 상태로 돌아가요. 지난 기록 탭에서 별점과 코멘트 예시를 볼 수 있어요.</div>'
+    : '';
   paintDday();
   paintGoals();
   const sp = S.todaySpecial || [];
@@ -863,7 +881,7 @@ function openShot(id) {
 async function removeShot(id) {
   if (!confirm('이 사진을 지울까요?')) return;
   try {
-    const r = await api({ action: 'deletePhoto', token: S.token, date: planDate, id });
+    const r = await api({ action: 'deletePhoto', token: S.token, date: planDate, id, current: photos });
     photos = r.photos;
     syncPlanCache();
     paintShots();
@@ -909,7 +927,7 @@ $('#shotInput').onchange = async e => {
   for (const f of files) {
     try {
       const dataUrl = await shrink(f);
-      const r = await api({ action: 'upload', token: S.token, date: planDate, dataUrl });
+      const r = await api({ action: 'upload', token: S.token, date: planDate, dataUrl, current: photos });
       photos = r.photos;
       photoCache[photos[photos.length - 1]] = dataUrl;
     } catch (err) { alert(err.message); break; }
@@ -951,7 +969,7 @@ $('#btnSaveGoals').onclick = async () => {
     const r = await api({ action: 'saveGoals', token: S.token, goals });
     S.goals = r.goals || goals;
     paintGoals();
-    $('#goalMsg').textContent = '저장했어요';
+    $('#goalMsg').textContent = S.demo ? '체험 중 — 저장 안 됨' : '저장했어요';
     setTimeout(() => { $('#goalMsg').textContent = ''; }, 2200);
   } catch (e) { alert(e.message); }
   b.disabled = false; b.textContent = '목표 저장';
@@ -964,7 +982,7 @@ $('#btnSave').onclick = async () => {
     const tgt = planOf(planDate);
     tgt.todos = todos.slice(); tgt.note = $('#inNote').value; tgt.photos = photos.slice();
     dirty = false;
-    $('#savedMsg').textContent = '저장했어요 🐻';
+    $('#savedMsg').textContent = S.demo ? '체험 중이라 실제로는 저장되지 않아요 🧪' : '저장했어요 🐻';
     setTimeout(() => { $('#savedMsg').textContent = ''; }, 2200);
     maybeGoTomorrow();
   } catch (e) { alert(e.message); }
@@ -1132,6 +1150,11 @@ $('#btnAdminLogin').onclick = async () => {
     $('#adminBody').classList.remove('hidden');
     $('#adminDate').value = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10);
     $('#spFrom').value = $('#adminDate').value;
+    try {
+      if (localStorage.getItem('sn-admin-today-hidden')) {
+        $('#todayBox').classList.add('hidden'); $('#btnToggleToday').textContent = '펼치기';
+      }
+    } catch (e) {}
     adminLoad();
   } catch (e) { showErr('#adminErr', e.message); }
 };
@@ -1150,6 +1173,40 @@ $('#adminRows').addEventListener('click', async e => {
     adminLoad();
   } catch (err) { alert(err.message); }
 });
+/* ── 오늘 제출 ── */
+function todayKST() { return new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); }
+
+function paintToday(r) {
+  const rows = r.rows.filter(x => !x.excluded);
+  // 실제로 기록을 남긴 학생만 (미리 세운 계획만 있거나 '없음'만 쓴 경우는 빼기)
+  const sub = rows.filter(x => x.recorded !== undefined ? x.recorded : (x.submitted && !x.empty));
+  $('#todayCount').textContent = sub.length + ' / ' + rows.length + '명';
+  const box = $('#todayBox');
+  if (!sub.length) { box.innerHTML = '<p class="empty">아직 오늘 제출한 학생이 없어요.</p>'; return; }
+  box.innerHTML = '<ul class="todaylist">' + sub.map(x => {
+    let sc;
+    if (x.total != null) sc = '<span class="sc">' + Number(x.total).toFixed(1) + '</span>';
+    else sc = '<span class="sc wait">채점 전</span>';
+    return '<li><span>' + esc(x.name) + '</span><span class="sid">' + esc(x.sid) + '</span>' + sc + '</li>';
+  }).join('') + '</ul>';
+}
+
+async function loadToday(already) {
+  try {
+    const r = (already && already.date === todayKST()) ? already
+      : await api({ action: 'adminList', pw: adminPw, date: todayKST() });
+    paintToday(r);
+  } catch (e) { $('#todayBox').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+
+$('#btnToggleToday').onclick = () => {
+  const box = $('#todayBox');
+  const hide = !box.classList.contains('hidden');
+  box.classList.toggle('hidden', hide);
+  $('#btnToggleToday').textContent = hide ? '펼치기' : '접기';
+  try { localStorage.setItem('sn-admin-today-hidden', hide ? '1' : ''); } catch (e) {}
+};
+
 /* ── 특별 보너스 ── */
 function paintSpecialList(rules) {
   const ul = $('#spList');
@@ -1230,6 +1287,7 @@ async function adminLoad() {
       '<div class="stat"><div class="n">' + (r.scored ? '완료' : '전') + '</div><div class="k">채점</div></div></div>';
 
     paintSpecialList(r.bonusRules || []);
+    loadToday(r);
 
     // 누적 순위
     const rk = $('#adminRank');
