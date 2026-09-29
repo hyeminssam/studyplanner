@@ -448,17 +448,17 @@ textarea.note:focus{border-color:var(--gold)}
   </div>
 
   <div id="adminBody" class="hidden">
-    <div class="card">
-      <h2>📋 오늘 제출 <span id="todayCount" style="font-size:.85rem;color:var(--muted)"></span>
-        <button class="btn small ghost" id="btnToggleToday" style="margin-left:auto">접기</button></h2>
-      <div id="todayBox"><p class="empty">불러오는 중...</p></div>
-    </div>
-
     <div class="datepick">
       <input type="date" id="adminDate">
       <button class="btn small ghost" id="btnAdminLoad">보기</button>
     </div>
     <div id="adminSummary"></div>
+
+    <div class="card">
+      <h2>📋 <span id="todayTitle">오늘 제출</span> <span id="todayCount" style="font-size:.85rem;color:var(--muted)"></span>
+        <button class="btn small ghost" id="btnToggleToday" style="margin-left:auto">접기</button></h2>
+      <div id="todayBox"><p class="empty">불러오는 중...</p></div>
+    </div>
 
     <div class="card">
       <h2>🎁 특별 보너스</h2>
@@ -1177,26 +1177,22 @@ $('#adminRows').addEventListener('click', async e => {
 function todayKST() { return new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); }
 
 function paintToday(r) {
+  $('#todayTitle').textContent = (r.date === todayKST() ? '오늘' : md(r.date)) + ' 제출';
   const rows = r.rows.filter(x => !x.excluded);
   // 실제로 기록을 남긴 학생만 (미리 세운 계획만 있거나 '없음'만 쓴 경우는 빼기)
   const sub = rows.filter(x => x.recorded !== undefined ? x.recorded : (x.submitted && !x.empty));
   $('#todayCount').textContent = sub.length + ' / ' + rows.length + '명';
   const box = $('#todayBox');
-  if (!sub.length) { box.innerHTML = '<p class="empty">아직 오늘 제출한 학생이 없어요.</p>'; return; }
+  if (!sub.length) {
+    box.innerHTML = '<p class="empty">' + (r.date === todayKST() ? '아직 오늘' : '이날') + ' 제출한 학생이 없어요.</p>';
+    return;
+  }
   box.innerHTML = '<ul class="todaylist">' + sub.map(x => {
     let sc;
     if (x.total != null) sc = '<span class="sc">' + Number(x.total).toFixed(1) + '</span>';
     else sc = '<span class="sc wait">채점 전</span>';
     return '<li><span>' + esc(x.name) + '</span><span class="sid">' + esc(x.sid) + '</span>' + sc + '</li>';
   }).join('') + '</ul>';
-}
-
-async function loadToday(already) {
-  try {
-    const r = (already && already.date === todayKST()) ? already
-      : await api({ action: 'adminList', pw: adminPw, date: todayKST() });
-    paintToday(r);
-  } catch (e) { $('#todayBox').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
 }
 
 $('#btnToggleToday').onclick = () => {
@@ -1277,6 +1273,8 @@ async function adminLoad() {
   const box = $('#adminRows');
   box.innerHTML = '<p class="empty">불러오는 중...</p>';
   $('#adminSummary').innerHTML = '';
+  $('#todayBox').innerHTML = '<p class="empty">불러오는 중...</p>';
+  $('#todayCount').textContent = '';
   try {
     const r = await api({ action: 'adminList', pw: adminPw, date: $('#adminDate').value });
 
@@ -1287,7 +1285,7 @@ async function adminLoad() {
       '<div class="stat"><div class="n">' + (r.scored ? '완료' : '전') + '</div><div class="k">채점</div></div></div>';
 
     paintSpecialList(r.bonusRules || []);
-    loadToday(r);
+    paintToday(r);
 
     // 누적 순위
     const rk = $('#adminRank');
