@@ -98,7 +98,7 @@ input,textarea{font-family:var(--body);font-size:16px;color:var(--ink)}
 .dday .txt{font-size:.88rem;opacity:.92;line-height:1.4}
 
 /* 목표 점수 */
-.goals{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
 .goal{text-align:center}
 .goal label{display:block;font-family:var(--ui);font-size:.88rem;color:var(--cocoa);margin-bottom:5px}
 .goal input{width:100%;padding:11px 4px;border:2px solid var(--line);border-radius:14px;background:#fff;
@@ -261,6 +261,30 @@ textarea.note:focus{border-color:var(--gold)}
 .todaylist .sc{margin-left:auto;color:var(--cocoa)}
 .todaylist .sc.wait{color:var(--muted);font-size:.8rem}
 .todaylist .sc.none{color:#9B3247;font-size:.8rem}
+.subjchips{display:flex;flex-wrap:wrap;gap:7px;min-height:38px;padding:6px 0}
+.subjchip{display:inline-flex;align-items:center;gap:5px;background:var(--cocoa);color:#FFF3DE;font-family:var(--ui);
+          font-size:1rem;padding:6px 8px 6px 13px;border-radius:999px}
+.subjchip button{color:#FFF3DE;font-size:1.05rem;line-height:1;padding:0 4px;opacity:.85}
+.subjquick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.subjquick button{font-family:var(--ui);font-size:.84rem;padding:5px 11px;border-radius:999px;border:2px dashed var(--line);
+                  color:var(--cocoa);background:#fff}
+.subjtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.subjtags span{font-family:var(--ui);font-size:.76rem;padding:1px 9px;border-radius:999px;background:#FFF3DE;color:#8A5A11}
+.tchip{font-family:var(--ui);font-size:.72rem;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.tchip.active{background:var(--mint);color:#fff}
+.tchip.upcoming{background:#E8F0FB;color:#2E5A8A}
+.tchip.ended{background:#EFE7DA;color:var(--muted)}
+.termnow{border-radius:16px;padding:10px 14px;margin-bottom:12px;font-family:var(--ui);font-size:.93rem}
+.termnow.on{background:#EEF9F3;border:2px solid var(--mint);color:#2F6B53}
+.termnow.off{background:#F6EFE4;border:2px solid var(--line);color:var(--cocoa)}
+.rankselect{width:100%;padding:9px 11px;border:2px solid var(--line);border-radius:12px;background:#fff;
+            font-family:var(--ui);font-size:.92rem;margin-bottom:8px}
+.termhead{font-family:var(--ui);font-size:.92rem;color:#8A5A11;background:#FFF3DE;border-radius:12px;
+          padding:6px 12px;margin:14px 0 4px;border-bottom:none !important;display:flex;gap:8px;align-items:center}
+.termhead:first-child{margin-top:0}
+.termhead .sum{margin-left:auto;font-size:.8rem;color:var(--muted)}
+.closed{text-align:center;padding:22px 18px}
+.closed .big{font-family:var(--ui);font-size:1.25rem;color:var(--cocoa);margin:6px 0 4px}
 .ranklist{list-style:none;margin:0;padding:0}
 .ranklist li{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px dashed var(--line);
              font-family:var(--ui)}
@@ -324,14 +348,16 @@ textarea.note:focus{border-color:var(--gold)}
     </div>
 
     <div class="hall">
-      <h2>🏆 이번 시험 준비 TOP 3</h2>
+      <h2 id="hallTitle">🏆 이번 시험 준비 TOP 3</h2>
       <ol id="hall"></ol>
     </div>
 
     <div id="demoBanner"></div>
     <div class="dday" id="ddayBox"></div>
     <div id="spBanner"></div>
+    <div id="closedBox"></div>
 
+    <div id="writeArea">
     <div class="card">
       <h2>🎯 내 목표 점수</h2>
       <div class="goals" id="goalBox"></div>
@@ -368,6 +394,7 @@ textarea.note:focus{border-color:var(--gold)}
       <p class="hint">안 올려도 괜찮아요. 풀어 놓은 문제집, 정리한 노트는 물론 그린 그림이나 운동한 기록도 올려도 돼요. 같이 보고 이야기해 줄게요.</p>
       <p class="hint">내 얼굴이나 친구 얼굴, 이름·주소가 보이는 사진은 올리지 말아 주세요.</p>
     </div>
+    </div><!-- /writeArea -->
     <div style="height:8px"></div>
   </section>
 
@@ -381,7 +408,7 @@ textarea.note:focus{border-color:var(--gold)}
   <section id="tabHistory" class="hidden">
     <div class="card">
       <h2>🗂 지난 기록</h2>
-      <p class="hint" style="margin-top:0">날짜를 누르면 그날 받은 별점과 선생님 코멘트를 볼 수 있어요.</p>
+      <p class="hint" style="margin-top:0">날짜를 누르면 그날 받은 별점과 선생님 코멘트를 볼 수 있어요. 지난 시험 때 쓴 기록도 모두 남아 있어요.</p>
       <ul class="daylist" id="dayList"></ul>
     </div>
   </section>
@@ -395,7 +422,7 @@ textarea.note:focus{border-color:var(--gold)}
       <p class="hint" id="rankSub"></p>
     </div>
     <div class="hall">
-      <h2>🏆 이번 시험 준비 TOP 3</h2>
+      <h2 id="hallTitle2">🏆 이번 시험 준비 TOP 3</h2>
       <ol id="hall2"></ol>
     </div>
     <div class="card">
@@ -448,6 +475,8 @@ textarea.note:focus{border-color:var(--gold)}
   </div>
 
   <div id="adminBody" class="hidden">
+    <div id="termNow"></div>
+
     <div class="datepick">
       <input type="date" id="adminDate">
       <button class="btn small ghost" id="btnAdminLoad">보기</button>
@@ -458,6 +487,36 @@ textarea.note:focus{border-color:var(--gold)}
       <h2>📋 <span id="todayTitle">오늘 제출</span> <span id="todayCount" style="font-size:.85rem;color:var(--muted)"></span>
         <button class="btn small ghost" id="btnToggleToday" style="margin-left:auto">접기</button></h2>
       <div id="todayBox"><p class="empty">불러오는 중...</p></div>
+    </div>
+
+    <div class="card">
+      <h2>📅 시험 기간 <button class="btn small ghost" id="btnToggleTerm" style="margin-left:auto">펼치기</button></h2>
+      <p class="hint" style="margin-top:0"><b>플래너 기간</b>에만 학생이 쓸 수 있고, 그 날짜만 매일 아침 채점해요. 기간이 아니면 채점도 Gemini 호출도 하지 않아요. 점수와 순위는 시험마다 따로 모이고, 지난 기록은 학생이 계속 볼 수 있어요.</p>
+      <ul class="splist" id="termList"></ul>
+      <div id="termFormWrap" class="hidden">
+        <div class="spform" style="margin-top:12px">
+          <label for="tmName">시험 이름</label>
+          <input id="tmName" maxlength="30" placeholder="예: 2학기 기말고사">
+          <div class="row2">
+            <div><label for="tmFrom">플래너 시작일</label><input type="date" id="tmFrom"></div>
+            <div><label for="tmTo">플래너 마지막날</label><input type="date" id="tmTo"></div>
+          </div>
+          <div class="row2">
+            <div><label for="tmExFrom">시험 첫날</label><input type="date" id="tmExFrom"></div>
+            <div><label for="tmExTo">시험 마지막날</label><input type="date" id="tmExTo"></div>
+          </div>
+          <p class="hint">플래너 마지막날은 보통 시험 마지막날로 두면 돼요. 마지막날 기록은 다음 날 아침에 채점됩니다.</p>
+          <label>시험 과목 <span style="color:var(--muted);font-size:.8rem">(학생 목표 점수 칸과 AI 채점이 이 과목을 기준으로 해요)</span></label>
+          <div class="subjchips" id="tmSubjects"></div>
+          <div class="addrow" style="margin-top:8px">
+            <input id="tmSubjIn" maxlength="12" placeholder="과목 이름 (예: 국어)">
+            <button id="btnSubjAdd" type="button">추가</button>
+          </div>
+          <div class="subjquick" id="tmSubjQuick"></div>
+          <button class="btn small" id="btnTmSave" style="margin-top:12px">시험 기간 만들기</button>
+          <button class="linkbtn inline hidden" id="btnTmCancel" style="margin-left:10px">수정 취소</button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -480,7 +539,7 @@ textarea.note:focus{border-color:var(--gold)}
     </div>
 
     <div class="card">
-      <h2>🏆 지금까지의 누적 순위 <button class="btn small ghost" id="btnToggleRank" style="margin-left:auto">펼치기</button></h2>
+      <h2>🏆 누적 순위 <button class="btn small ghost" id="btnToggleRank" style="margin-left:auto">펼치기</button></h2>
       <div id="adminRank" class="hidden"></div>
     </div>
 
@@ -496,7 +555,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxikwsA_Nk-rWKljOcb8sCZO4Yvo6pmaiXzZmD8wNr3yPlWZT5-ySI1VjaxvcC4pO8TRA/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxxGJCtcmG7VMEunKcalWlSf2xUKugX0ULrLMcGSXZ6JhOcl5WlTP-Y9tFVA2n_9FnF8g/exec';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -669,6 +728,11 @@ function paint() {
   $('#stTotal').innerHTML = (S.myTotal || 0).toFixed(1) + '<small>점</small>';
   $('#stStreak').innerHTML = S.streak + '<small>일</small>';
 
+  const tm = S.term;
+  const hallTitle = tm ? '🏆 ' + tm.name + (tm.status === 'ended' ? ' 최종 TOP 3' : ' TOP 3') : '🏆 이번 시험 준비 TOP 3';
+  $('#hallTitle').textContent = hallTitle;
+  $('#hallTitle2').textContent = hallTitle;
+
   [ '#hall', '#hall2' ].forEach(sel => {
     const ol = $(sel); ol.innerHTML = '';
     const list = S.podium || [];
@@ -681,12 +745,14 @@ function paint() {
       '<span class="pt">' + p.total.toFixed(1) + '점</span>')));
   });
 
+  const ended = tm && tm.status === 'ended';
   $('#rankLine').textContent = S.myRank
-    ? '우리반 ' + S.classSize + '명 중 ' + S.myRank + '등'
+    ? (tm ? tm.name + ' ' : '') + (ended ? '최종 ' : '') + '우리반 ' + S.classSize + '명 중 ' + S.myRank + '등'
     : '아직 순위가 없어요';
   $('#rankSub').textContent = S.myRank
-    ? '모은 점수 ' + (S.myTotal).toFixed(1) + '점 · 내 등수는 나만 볼 수 있어요'
-    : '오늘 플래너를 쓰면 내일 아침 첫 별점을 받아요';
+    ? '모은 점수 ' + (S.myTotal).toFixed(1) + '점 · 내 등수는 나만 볼 수 있어요' +
+      (ended ? ' · 다음 시험 기간에는 0점부터 새로 시작해요' : '')
+    : (S.open ? '오늘 플래너를 쓰면 내일 아침 첫 별점을 받아요' : '다음 시험 기간에 플래너가 다시 열려요');
   $('#bearRank').innerHTML = bearSVG(S.myRank && S.myRank <= 3 ? 'happy' : 'idle');
 
   $('#demoBanner').innerHTML = S.demo
@@ -694,6 +760,7 @@ function paint() {
       '입력한 내용은 <b>어디에도 저장되지 않고</b>, 새로고침하면 처음 상태로 돌아가요. 지난 기록 탭에서 별점과 코멘트 예시를 볼 수 있어요.</div>'
     : '';
   paintDday();
+  paintClosed();
   paintGoals();
   const sp = S.todaySpecial || [];
   $('#spBanner').innerHTML = sp.length
@@ -705,12 +772,38 @@ function paint() {
   paintShots();
 }
 
+/** 시험 기간이 아니면 쓰기 화면을 숨기고 안내를 띄운다 */
+function paintClosed() {
+  const open = S.open !== false;
+  $('#writeArea').classList.toggle('hidden', !open);
+  const onToday = !$('#tabToday').classList.contains('hidden');
+  $('#saveBar').classList.toggle('hidden', !open || !onToday);
+  if (open) { $('#closedBox').innerHTML = ''; return; }
+  const n = S.nextTerm, t = S.term;
+  $('#closedBox').innerHTML = '<div class="card closed">' + bearSVG('sleep') +
+    '<div class="big">지금은 플래너 쉬는 기간이에요</div>' +
+    '<p style="margin:0;font-size:.93rem">' +
+      (n ? '<b>' + esc(n.name) + '</b> 플래너는 <b>' + md(n.from) + '</b>부터 다시 열려요.'
+         : '다음 시험 기간이 정해지면 다시 열려요.') + '</p>' +
+    (t ? '<p class="hint" style="margin-top:8px">' + esc(t.name) + ' 때 쓴 기록과 별점, 코멘트는 <b>지난 기록</b> 탭에서 언제든 볼 수 있어요.</p>' : '') +
+    '</div>';
+}
+
 function paintDday() {
   const d = S.dday, period = md(S.examStart) + ' ~ ' + md(S.examEnd);
   let h;
+  if (S.open === false) {
+    const n = S.nextTerm;
+    h = n ? '<span class="big">D-' + Math.max(0, daysFromToday(n.examFrom)) + '</span>' +
+            '<span class="txt">' + esc(n.name) + ' ' + md(n.examFrom) + ' ~ ' + md(n.examTo) + '<br>플래너는 ' + md(n.from) + '부터 열려요</span>'
+          : '<span class="big">쉬는 중</span><span class="txt">다음 시험 기간에 플래너가 다시 열려요</span>';
+    $('#ddayBox').innerHTML = h;
+    $('#ddayBox2').innerHTML = h;
+    return;
+  }
   if (d > 0) {
     h = '<span class="big">D-' + d + '</span>' +
-        '<span class="txt">' + period + ' 시험<br>' + S.subjects.join(' · ') + ' 세 과목</span>';
+        '<span class="txt">' + (S.term ? esc(S.term.name) + ' ' : '') + period + '<br>' + (S.subjects.length > 4 ? S.subjects.length + '과목' : S.subjects.join(' · ')) + '</span>';
   } else if (d === 0) {
     h = '<span class="big">D-day</span><span class="txt">오늘부터 시험이에요. 어제까지 한 걸 믿어요!</span>';
   } else if (S.daysToEnd >= 0) {
@@ -780,6 +873,10 @@ function paintPlanSwitch() {
   }
 }
 
+function daysFromToday(ds) {
+  const a = S.today.split('-').map(Number), b = ds.split('-').map(Number);
+  return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 864e5);
+}
 function md(ds) { const p = ds.split('-'); return Number(p[1]) + '월 ' + Number(p[2]) + '일'; }
 
 function planOf(d) {
@@ -993,6 +1090,7 @@ window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); 
 /** 오늘 기록을 저장하면 하루 한 번, 내일 계획 세우기로 안내하고 넘겨 준다 */
 function maybeGoTomorrow() {
   if (planDate !== S.today) return;
+  if (S.tomorrowOpen === false) return;          // 내일이 시험 기간 밖이면 넘어가지 않는다
   if (!$('#inNote').value.trim()) return;      // 공부한 내용을 쓴 다음에만
   const k = 'sn-tomorrow-' + S.sid + '-' + S.today;
   try { if (localStorage.getItem(k)) return; localStorage.setItem(k, '1'); } catch (e) {}
@@ -1012,7 +1110,7 @@ document.querySelectorAll('.tabs button').forEach(btn => {
     const t = btn.dataset.tab;
     document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b === btn));
     ['Today','Scope','History','Rank'].forEach(x => $('#tab' + x).classList.toggle('hidden', x !== t));
-    $('#saveBar').classList.toggle('hidden', t !== 'Today');
+    $('#saveBar').classList.toggle('hidden', t !== 'Today' || S.open === false);
     window.scrollTo(0, 0);
     if (t === 'History') loadHistory();
     if (t === 'Scope') loadScope();
@@ -1050,7 +1148,16 @@ async function loadHistory() {
     const r = await api({ action: 'history', token: S.token });
     box.innerHTML = '';
     if (!r.list.length) { box.appendChild(el('li', 'empty', '아직 쓴 플래너가 없어요.')); return; }
+    // 시험별 합계 (그 시험에서 모은 점수)
+    const sums = {};
+    r.list.forEach(d => { if (d.total != null) sums[d.term] = (sums[d.term] || 0) + d.total; });
+    let lastTerm = null;
     r.list.forEach(d => {
+      if (d.term && d.term !== lastTerm) {
+        lastTerm = d.term;
+        box.appendChild(el('li', 'termhead', '📚 ' + esc(d.term) +
+          (sums[d.term] != null ? '<span class="sum">모은 점수 ' + (Math.round(sums[d.term] * 10) / 10).toFixed(1) + '점</span>' : '')));
+      }
       const li = el('li');
       const b = el('button');
       b.innerHTML = '<span class="d">' + md(d.date) + '</span>' +
@@ -1203,6 +1310,136 @@ $('#btnToggleToday').onclick = () => {
   try { localStorage.setItem('sn-admin-today-hidden', hide ? '1' : ''); } catch (e) {}
 };
 
+/* ── 시험 기간 ── */
+let rankTermId = '';         // 누적 순위에서 고른 시험 (비우면 서버가 알맞은 시험을 고름)
+let editingTermId = '';
+let termsCache = [];
+const TSTAT = { active: '운영 중', upcoming: '예정', ended: '끝남' };
+
+function paintTermNow(r) {
+  const act = (r.terms || []).filter(t => t.status === 'active')[0];
+  const next = (r.terms || []).filter(t => t.status === 'upcoming')[0];
+  const dt = r.dateTerm;
+  let h = act
+    ? '<div class="termnow on">✅ 지금 <b>' + esc(act.name) + '</b> 플래너 운영 중 (' + md(act.from) + ' ~ ' + md(act.to) + ') · 매일 아침 채점해요</div>'
+    : '<div class="termnow off">⏸ 지금은 운영 기간이 아니에요. 학생은 지난 기록만 볼 수 있고, 채점도 쉬고 있어요.' +
+      (next ? ' 다음: <b>' + esc(next.name) + '</b> ' + md(next.from) + '부터' : ' 아래 📅 시험 기간에서 새 기간을 만들어 주세요.') + '</div>';
+  $('#termNow').innerHTML = h;
+  const dateNote = dt ? '' : '<p class="hint" style="margin:-6px 0 10px;color:#9B3247">고른 날짜(' + md(r.date) + ')는 시험 기간이 아니라 채점하지 않는 날이에요.</p>';
+  $('#adminSummary').insertAdjacentHTML('beforeend', dateNote);
+}
+
+function paintTerms(terms) {
+  const first = !termsCache.length && !editingTermId;
+  termsCache = terms;
+  if (first) resetTermForm();
+  const ul = $('#termList');
+  if (!terms.length) { ul.innerHTML = '<li class="empty">아직 만든 시험 기간이 없어요. [펼치기]를 눌러 만들어 주세요.</li>'; return; }
+  ul.innerHTML = terms.slice().reverse().map(t =>
+    '<li><div class="top"><span>' + esc(t.name) + '</span><span class="tchip ' + t.status + '">' + TSTAT[t.status] + '</span>' +
+    '<button class="linkbtn inline tmedit" data-id="' + esc(t.id) + '" style="margin-left:auto;font-size:.8rem">수정</button>' +
+    '<button class="linkbtn inline tmdel" data-id="' + esc(t.id) + '" data-name="' + esc(t.name) + '" style="font-size:.8rem;margin-left:8px">삭제</button></div>' +
+    '<div class="subjtags">' + (t.subjects || []).map(x => '<span>' + esc(x) + '</span>').join('') + '</div>' +
+    '<div class="msg" style="color:var(--cocoa)">플래너 ' + md(t.from) + ' ~ ' + md(t.to) + ' · 시험 ' + md(t.examFrom) +
+      (t.examTo !== t.examFrom ? ' ~ ' + md(t.examTo) : '') + '</div></li>').join('');
+}
+
+const SUBJ_QUICK = ['국어', '영어', '수학', '과학', '사회', '역사', '도덕', '기술·가정', '정보', '한문'];
+let tmSubjects = ['과학', '수학', '영어'];
+
+function paintSubjEditor() {
+  $('#tmSubjects').innerHTML = tmSubjects.length
+    ? tmSubjects.map((x, i) => '<span class="subjchip">' + esc(x) +
+        '<button type="button" data-i="' + i + '" aria-label="' + esc(x) + ' 빼기">×</button></span>').join('')
+    : '<span class="empty">과목을 한 개 이상 넣어 주세요.</span>';
+  $('#tmSubjQuick').innerHTML = SUBJ_QUICK.filter(x => tmSubjects.indexOf(x) < 0)
+    .map(x => '<button type="button" data-s="' + esc(x) + '">＋ ' + esc(x) + '</button>').join('');
+}
+function addSubj(name) {
+  const t = String(name || '').trim().slice(0, 12);
+  if (!t) return;
+  if (tmSubjects.indexOf(t) >= 0) return alert('이미 넣은 과목이에요.');
+  if (tmSubjects.length >= 12) return alert('과목은 12개까지 넣을 수 있어요.');
+  tmSubjects.push(t); paintSubjEditor();
+}
+$('#tmSubjects').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return;
+  tmSubjects.splice(Number(b.dataset.i), 1); paintSubjEditor();
+});
+$('#tmSubjQuick').addEventListener('click', e => {
+  const b = e.target.closest('button[data-s]'); if (b) addSubj(b.dataset.s);
+});
+$('#btnSubjAdd').onclick = () => { addSubj($('#tmSubjIn').value); $('#tmSubjIn').value = ''; $('#tmSubjIn').focus(); };
+$('#tmSubjIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnSubjAdd').click(); });
+
+function resetTermForm() {
+  editingTermId = '';
+  ['#tmName', '#tmFrom', '#tmTo', '#tmExFrom', '#tmExTo'].forEach(id => { $(id).value = ''; });
+  $('#btnTmSave').textContent = '시험 기간 만들기';
+  $('#btnTmCancel').classList.add('hidden');
+  // 새로 만들 때는 가장 최근 시험의 과목을 그대로 가져온다
+  const last = termsCache.length ? termsCache[termsCache.length - 1] : null;
+  tmSubjects = last && last.subjects ? last.subjects.slice() : ['과학', '수학', '영어'];
+  paintSubjEditor();
+}
+
+$('#btnToggleTerm').onclick = () => {
+  const w = $('#termFormWrap');
+  const hide = !w.classList.contains('hidden');
+  w.classList.toggle('hidden', hide);
+  $('#btnToggleTerm').textContent = hide ? '펼치기' : '접기';
+};
+
+$('#termList').addEventListener('click', async e => {
+  const ed = e.target.closest('.tmedit'), del = e.target.closest('.tmdel');
+  if (ed) {
+    const t = termsCache.filter(x => x.id === ed.dataset.id)[0];
+    if (!t) return;
+    editingTermId = t.id;
+    $('#tmName').value = t.name; $('#tmFrom').value = t.from; $('#tmTo').value = t.to;
+    $('#tmExFrom').value = t.examFrom; $('#tmExTo').value = t.examTo;
+    tmSubjects = (t.subjects || []).slice(); paintSubjEditor();
+    $('#btnTmSave').textContent = '수정 저장';
+    $('#btnTmCancel').classList.remove('hidden');
+    $('#termFormWrap').classList.remove('hidden');
+    $('#btnToggleTerm').textContent = '접기';
+    $('#tmName').focus();
+  }
+  if (del) {
+    if (!confirm('"' + del.dataset.name + '" 시험 기간을 지울까요?\n\n학생 기록과 점수는 그대로 남지만, 이 기간의 순위가 더는 보이지 않고 그 날짜들은 채점하지 않아요.\n같은 날짜로 다시 만들면 원래대로 돌아와요.')) return;
+    try {
+      const r = await api({ action: 'adminTermDelete', pw: adminPw, id: del.dataset.id });
+      paintTerms(r.terms); if (rankTermId === del.dataset.id) rankTermId = '';
+      adminLoad();
+    } catch (err) { alert(err.message); }
+  }
+});
+
+$('#btnTmCancel').onclick = resetTermForm;
+
+$('#btnTmSave').onclick = async () => {
+  const q = {
+    action: 'adminTermSave', pw: adminPw, id: editingTermId,
+    name: $('#tmName').value.trim(), from: $('#tmFrom').value, to: $('#tmTo').value,
+    examFrom: $('#tmExFrom').value, examTo: $('#tmExTo').value || $('#tmExFrom').value,
+    subjects: tmSubjects.slice()
+  };
+  if (!q.subjects.length) return alert('시험 과목을 한 개 이상 넣어 주세요.');
+  if (!q.name) return alert('시험 이름을 적어 주세요.');
+  if (!q.from || !q.to) return alert('플래너 시작일과 마지막날을 골라 주세요.');
+  if (!q.examFrom) return alert('시험 첫날을 골라 주세요.');
+  const b = $('#btnTmSave'); b.disabled = true;
+  try {
+    const r = await api(q);
+    paintTerms(r.terms);
+    alert('"' + q.name + '" 시험 기간을 ' + (editingTermId ? '고쳤어요.' : '만들었어요.') +
+          '\n플래너는 ' + q.from + ' ~ ' + q.to + ' 에만 열리고 채점돼요.');
+    resetTermForm();
+    adminLoad();
+  } catch (e) { alert(e.message); }
+  b.disabled = false;
+};
+
 /* ── 특별 보너스 ── */
 function paintSpecialList(rules) {
   const ul = $('#spList');
@@ -1276,7 +1513,7 @@ async function adminLoad() {
   $('#todayBox').innerHTML = '<p class="empty">불러오는 중...</p>';
   $('#todayCount').textContent = '';
   try {
-    const r = await api({ action: 'adminList', pw: adminPw, date: $('#adminDate').value });
+    const r = await api({ action: 'adminList', pw: adminPw, date: $('#adminDate').value, termId: rankTermId || '' });
 
     $('#adminSummary').innerHTML =
       '<div class="stats">' +
@@ -1285,26 +1522,37 @@ async function adminLoad() {
       '<div class="stat"><div class="n">' + (r.scored ? '완료' : '전') + '</div><div class="k">채점</div></div></div>';
 
     paintSpecialList(r.bonusRules || []);
+    paintTerms(r.terms || []);
+    paintTermNow(r);
     paintToday(r);
 
     // 누적 순위
     const rk = $('#adminRank');
     const ranking = r.ranking || null;
+    const sel = (r.terms && r.terms.length)
+      ? '<select class="rankselect" id="rankTermSel">' + r.terms.slice().reverse().map(t =>
+          '<option value="' + esc(t.id) + '"' + (r.rankTerm && r.rankTerm.id === t.id ? ' selected' : '') + '>' +
+          esc(t.name) + ' (' + md(t.from) + ' ~ ' + md(t.to) + ')' + '</option>').join('') + '</select>'
+      : '';
     if (!ranking) {
       rk.innerHTML = '<div class="err">서버가 아직 이전 버전이에요. Apps Script에서 <b>배포 → 배포 관리 → 편집 → 새 버전 → 배포</b>를 해 주세요.</div>';
+    } else if (!r.rankTerm) {
+      rk.innerHTML = '<p class="empty">시험 기간을 먼저 만들어 주세요.</p>';
     } else if (!ranking.length) {
-      rk.innerHTML = '<p class="empty">아직 채점된 기록이 없어요.</p>';
+      rk.innerHTML = sel + '<p class="empty">이 시험에서는 아직 채점된 기록이 없어요.</p>';
     } else {
       const count = {};
       ranking.forEach(x => { count[x.rank] = (count[x.rank] || 0) + 1; });
-      rk.innerHTML = '<ul class="ranklist">' + ranking.map(x =>
+      rk.innerHTML = sel + '<ul class="ranklist">' + ranking.map(x =>
         '<li><span class="r' + (x.rank <= 3 ? ' top' : '') + '">' + x.rank + '등</span>' +
         '<span>' + esc(x.name) + '</span>' +
         '<span class="sid">' + esc(x.sid) + '</span>' +
         (count[x.rank] > 1 ? '<span class="tie">공동</span>' : '') +
         '<span class="pt">' + x.total.toFixed(1) + '</span></li>').join('') + '</ul>' +
-        '<p class="hint">제출하고 채점까지 끝난 학생만 나옵니다. 총 ' + ranking.length + '명.</p>';
+        '<p class="hint">' + esc(r.rankTerm.name) + ' 기간 점수만 더한 순위예요. 제출하고 채점까지 끝난 학생만 나옵니다. 총 ' + ranking.length + '명.</p>';
     }
+    const rs = $('#rankTermSel');
+    if (rs) rs.onchange = () => { rankTermId = rs.value; adminLoad(); };
 
     box.innerHTML = '';
     r.rows.forEach(s => {
