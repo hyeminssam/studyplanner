@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFF3DE">
+<meta name="robots" content="noindex, nofollow">
 <title>우리반 공부 플래너</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -299,6 +300,63 @@ textarea.note:focus{border-color:var(--gold)}
 .ranklist .sid{color:var(--muted);font-size:.8rem}
 .ranklist .pt{margin-left:auto;color:var(--cocoa)}
 .ranklist .tie{background:#F6E3BE;color:#6B4318;font-size:.72rem;padding:1px 7px;border-radius:999px}
+/* 접고 펴는 카드 */
+.card.fold > h2{cursor:pointer;user-select:none;flex-wrap:wrap}
+.card.fold > h2 .hcount{font-size:.85rem;color:var(--muted)}
+.card.fold > h2 .hright{margin-left:auto;font-size:.82rem}
+.foldbtn{margin-left:auto;font-family:var(--ui);font-size:.82rem;color:var(--cocoa);background:#fff;border:2px solid var(--line);
+         border-radius:999px;padding:4px 12px;white-space:nowrap}
+.card.fold > h2 .hright + .foldbtn{margin-left:8px}
+.card.folded > .cbody{display:none}
+.card.folded > h2{margin-bottom:0}
+
+/* 제출 학생 — 이름을 누르면 펼쳐짐 */
+.subrow{border-bottom:1px dashed var(--line)}
+.subrow:last-child{border-bottom:none}
+.shead{display:flex;width:100%;align-items:center;gap:8px;padding:12px 2px;min-height:52px;text-align:left;
+       font-family:var(--ui);font-size:1rem}
+.shead .chev{flex:none;width:1.1em;color:var(--muted);transition:transform .15s}
+.subrow.open .shead .chev{transform:rotate(90deg)}
+.shead .nm{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shead .sid{color:var(--muted);font-size:.78rem}
+.shead .tags{display:flex;gap:5px;flex-wrap:wrap;min-width:0;flex:0 1 auto}
+.shead .sc{margin-left:auto;flex:none;display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:.92rem;color:var(--cocoa)}
+.shead .sc .wait{color:var(--muted);font-size:.82rem}
+.shead .sc .stars{font-size:1rem}
+.sdetail{padding:2px 2px 16px 22px}
+.sdetail .plan{color:var(--muted);font-size:.86rem;margin-bottom:4px;white-space:pre-wrap}
+.sdetail .note{font-size:.93rem;white-space:pre-wrap;margin-bottom:6px}
+.sdetail .acct{font-size:.8rem;color:var(--muted);margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-family:var(--ui);font-size:.72rem;padding:1px 8px;border-radius:999px;background:#EFE7DA;color:var(--muted);white-space:nowrap}
+
+@media (max-width: 599px){
+  .shead .sc .stars{display:none}          /* 휴대폰에서는 별 그림 대신 숫자만 */
+  .shead .sid{display:none}                /* 학번은 펼치면 보임 */
+  .sdetail{padding-left:4px}
+}
+.adminMain > #btnAdminScore{margin-bottom:14px}
+#scAdmin{overflow-x:hidden}
+
+/* 미제출 — 이름만 */
+.uchips{display:flex;flex-wrap:wrap;gap:7px}
+.uchip{font-family:var(--ui);font-size:.95rem;padding:7px 13px;border-radius:999px;background:#fff;border:2px solid var(--line);color:var(--cocoa)}
+.uchip small{font-size:.7rem;color:#9B3247;margin-left:4px}
+.uchip[aria-pressed="true"]{border-color:var(--gold);background:#FFF6E2}
+.upanel{margin-top:10px;background:#FFF6E2;border-radius:14px;padding:10px 12px;font-size:.88rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* 노트북: 넓게, 두 단 */
+.adminGrid{display:block}
+@media (min-width: 900px){
+  #scAdmin.wrap{max-width:1240px;padding-left:28px;padding-right:28px}
+  #adminGate{max-width:520px;margin:0 auto}
+  .adminGrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:22px;align-items:start}
+  #termNow{max-width:none}
+}
+@media (min-width: 1150px){
+  .subrow.open .sdetail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+  .sdetail .dleft .why{margin-top:10px}
+}
+
 .trow{border-bottom:1px dashed var(--line);padding:12px 0}
 .trow:last-child{border-bottom:none}
 .thead{display:flex;align-items:center;gap:8px;font-family:var(--ui)}
@@ -481,78 +539,97 @@ textarea.note:focus{border-color:var(--gold)}
 
   <div id="adminBody" class="hidden">
     <div id="termNow"></div>
+    <div class="adminGrid">
+      <div class="adminMain">
+        <div class="datepick">
+          <input type="date" id="adminDate">
+          <button class="btn small ghost" id="btnAdminLoad">보기</button>
+        </div>
+        <div id="adminSummary"></div>
 
-    <div class="datepick">
-      <input type="date" id="adminDate">
-      <button class="btn small ghost" id="btnAdminLoad">보기</button>
-    </div>
-    <div id="adminSummary"></div>
+        <div class="card fold" data-fold="sub">
+          <h2>📋 <span id="subTitle">오늘 제출</span> <span class="hcount" id="subCount"></span>
+            <button class="linkbtn inline hright" id="btnExpandAll" type="button">모두 펼치기</button></h2>
+          <div class="cbody">
+            <p class="hint" style="margin-top:0">이름을 누르면 쓴 내용, 채점 근거, 코멘트가 펼쳐져요.</p>
+            <div id="subList"><p class="empty">불러오는 중...</p></div>
+          </div>
+        </div>
 
-    <div class="card">
-      <h2>📋 <span id="todayTitle">오늘 제출</span> <span id="todayCount" style="font-size:.85rem;color:var(--muted)"></span>
-        <button class="btn small ghost" id="btnToggleToday" style="margin-left:auto">접기</button></h2>
-      <div id="todayBox"><p class="empty">불러오는 중...</p></div>
-    </div>
+        <div class="card fold" data-fold="unsub">
+          <h2>🙅 <span id="unsubTitle">미제출</span> <span class="hcount" id="unsubCount"></span></h2>
+          <div class="cbody">
+            <div id="unsubList"></div>
+            <div id="unsubPanel"></div>
+          </div>
+        </div>
 
-    <div class="card">
-      <h2>📅 시험 기간 <button class="btn small ghost" id="btnToggleTerm" style="margin-left:auto">펼치기</button></h2>
-      <p class="hint" style="margin-top:0"><b>플래너 기간</b>에만 학생이 쓸 수 있고, 그 날짜만 매일 아침 채점해요. 기간이 아니면 채점도 Gemini 호출도 하지 않아요. 점수와 순위는 시험마다 따로 모이고, 지난 기록은 학생이 계속 볼 수 있어요.</p>
-      <ul class="splist" id="termList"></ul>
-      <div id="termFormWrap" class="hidden">
-        <div class="spform" style="margin-top:12px">
-          <label for="tmName">시험 이름</label>
-          <input id="tmName" maxlength="30" placeholder="예: 2학기 기말고사">
-          <div class="row2">
-            <div><label for="tmFrom">플래너 시작일</label><input type="date" id="tmFrom"></div>
-            <div><label for="tmTo">플래너 마지막날</label><input type="date" id="tmTo"></div>
+        <button class="btn ghost" id="btnAdminScore">이 날짜 지금 채점하기</button>
+      </div>
+
+      <div class="adminSide">
+        <div class="card fold" data-fold="term" data-default="closed">
+          <h2>📅 시험 기간</h2>
+          <div class="cbody">
+          <p class="hint" style="margin-top:0"><b>플래너 기간</b>에만 학생이 쓸 수 있고, 그 날짜만 매일 아침 채점해요. 기간이 아니면 채점도 Gemini 호출도 하지 않아요. 점수와 순위는 시험마다 따로 모이고, 지난 기록은 학생이 계속 볼 수 있어요.</p>
+          <ul class="splist" id="termList"></ul>
+          <button class="btn small ghost" id="btnToggleTerm" type="button" style="margin-top:10px">＋ 새 시험 기간 만들기</button>
+          <div id="termFormWrap" class="hidden">
+            <div class="spform" style="margin-top:12px">
+              <label for="tmName">시험 이름</label>
+              <input id="tmName" maxlength="30" placeholder="예: 2학기 기말고사">
+              <div class="row2">
+                <div><label for="tmFrom">플래너 시작일</label><input type="date" id="tmFrom"></div>
+                <div><label for="tmTo">플래너 마지막날</label><input type="date" id="tmTo"></div>
+              </div>
+              <div class="row2">
+                <div><label for="tmExFrom">시험 첫날</label><input type="date" id="tmExFrom"></div>
+                <div><label for="tmExTo">시험 마지막날</label><input type="date" id="tmExTo"></div>
+              </div>
+              <p class="hint">플래너 마지막날은 보통 시험 마지막날로 두면 돼요. 마지막날 기록은 다음 날 아침에 채점됩니다.</p>
+              <label>시험 과목 <span style="color:var(--muted);font-size:.8rem">(학생 목표 점수 칸과 AI 채점이 이 과목을 기준으로 해요)</span></label>
+              <div class="subjchips" id="tmSubjects"></div>
+              <div class="addrow" style="margin-top:8px">
+                <input id="tmSubjIn" maxlength="12" placeholder="과목 이름 (예: 국어)">
+                <button id="btnSubjAdd" type="button">추가</button>
+              </div>
+              <div class="subjquick" id="tmSubjQuick"></div>
+              <button class="btn small" id="btnTmSave" style="margin-top:12px">시험 기간 만들기</button>
+              <button class="linkbtn inline hidden" id="btnTmCancel" style="margin-left:10px">수정 취소</button>
+            </div>
           </div>
-          <div class="row2">
-            <div><label for="tmExFrom">시험 첫날</label><input type="date" id="tmExFrom"></div>
-            <div><label for="tmExTo">시험 마지막날</label><input type="date" id="tmExTo"></div>
           </div>
-          <p class="hint">플래너 마지막날은 보통 시험 마지막날로 두면 돼요. 마지막날 기록은 다음 날 아침에 채점됩니다.</p>
-          <label>시험 과목 <span style="color:var(--muted);font-size:.8rem">(학생 목표 점수 칸과 AI 채점이 이 과목을 기준으로 해요)</span></label>
-          <div class="subjchips" id="tmSubjects"></div>
-          <div class="addrow" style="margin-top:8px">
-            <input id="tmSubjIn" maxlength="12" placeholder="과목 이름 (예: 국어)">
-            <button id="btnSubjAdd" type="button">추가</button>
+        </div>
+
+        <div class="card fold" data-fold="bonus" data-default="closed">
+          <h2>🎁 특별 보너스</h2>
+          <div class="cbody">
+          <p class="hint" style="margin-top:0">정한 날짜에 기록을 올린 학생 <b>모두에게</b> 보너스가 자동으로 더해져요. 이미 채점된 날짜면 저장하는 즉시 반영되고, 아직이면 그날 아침 채점할 때 더해집니다. 빈 기록("없음" 등)은 받지 못해요.</p>
+          <div class="spform">
+            <label for="spName">이름 (학생 보너스 내역에 보여요)</label>
+            <input id="spName" maxlength="30" placeholder="예: 추석 당일 보너스">
+            <div class="row2">
+              <div><label for="spFrom">시작 날짜</label><input type="date" id="spFrom"></div>
+              <div><label for="spTo">끝 날짜 (하루면 비워 두기)</label><input type="date" id="spTo"></div>
+            </div>
+            <label for="spPoint">점수 (0.1 ~ 3.0)</label>
+            <input id="spPoint" type="number" step="0.1" min="0.1" max="3" placeholder="예: 0.5" inputmode="decimal">
+            <label for="spMsg">학생에게 보일 멘트 (보너스를 받은 학생에게만 보여요)</label>
+            <textarea id="spMsg" maxlength="300" placeholder="예: 추석에도 책상 앞에 앉은 여러분, 정말 대단해요! 선생님이 특별 점수를 드립니다 🌕"></textarea>
+            <button class="btn small" id="btnSpAdd" style="margin-top:10px">보너스 만들기</button>
           </div>
-          <div class="subjquick" id="tmSubjQuick"></div>
-          <button class="btn small" id="btnTmSave" style="margin-top:12px">시험 기간 만들기</button>
-          <button class="linkbtn inline hidden" id="btnTmCancel" style="margin-left:10px">수정 취소</button>
+          <ul class="splist" id="spList"></ul>
+          </div>
+        </div>
+
+        <div class="card fold" data-fold="rank" data-default="closed">
+          <h2>🏆 누적 순위</h2>
+          <div class="cbody">
+            <div id="adminRank"></div>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <h2>🎁 특별 보너스</h2>
-      <p class="hint" style="margin-top:0">정한 날짜에 기록을 올린 학생 <b>모두에게</b> 보너스가 자동으로 더해져요. 이미 채점된 날짜면 저장하는 즉시 반영되고, 아직이면 그날 아침 채점할 때 더해집니다. 빈 기록("없음" 등)은 받지 못해요.</p>
-      <div class="spform">
-        <label for="spName">이름 (학생 보너스 내역에 보여요)</label>
-        <input id="spName" maxlength="30" placeholder="예: 추석 당일 보너스">
-        <div class="row2">
-          <div><label for="spFrom">시작 날짜</label><input type="date" id="spFrom"></div>
-          <div><label for="spTo">끝 날짜 (하루면 비워 두기)</label><input type="date" id="spTo"></div>
-        </div>
-        <label for="spPoint">점수 (0.1 ~ 3.0)</label>
-        <input id="spPoint" type="number" step="0.1" min="0.1" max="3" placeholder="예: 0.5" inputmode="decimal">
-        <label for="spMsg">학생에게 보일 멘트 (보너스를 받은 학생에게만 보여요)</label>
-        <textarea id="spMsg" maxlength="300" placeholder="예: 추석에도 책상 앞에 앉은 여러분, 정말 대단해요! 선생님이 특별 점수를 드립니다 🌕"></textarea>
-        <button class="btn small" id="btnSpAdd" style="margin-top:10px">보너스 만들기</button>
-      </div>
-      <ul class="splist" id="spList"></ul>
-    </div>
-
-    <div class="card">
-      <h2>🏆 누적 순위 <button class="btn small ghost" id="btnToggleRank" style="margin-left:auto">펼치기</button></h2>
-      <div id="adminRank" class="hidden"></div>
-    </div>
-
-    <div class="card">
-      <h2>학생 기록</h2>
-      <div id="adminRows"></div>
-    </div>
-    <button class="btn ghost" id="btnAdminScore">이 날짜 지금 채점하기</button>
     <div style="height:10px"></div>
     <button class="linkbtn" id="btnAdminOut">나가기</button>
   </div>
@@ -560,7 +637,7 @@ textarea.note:focus{border-color:var(--gold)}
 
 <script>
 /* ═══════════════ 설정 ═══════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxxGJCtcmG7VMEunKcalWlSf2xUKugX0ULrLMcGSXZ6JhOcl5WlTP-Y9tFVA2n_9FnF8g/exec';   /* .../exec 로 끝나는 주소 */
+const API_URL = '여기에_APPS_SCRIPT_웹앱_주소_붙여넣기';   /* .../exec 로 끝나는 주소 */
 const KEY = 'sn-planner-session';
 
 /* ═══════════════ 공용 ═══════════════ */
@@ -1265,11 +1342,6 @@ $('#btnAdminLogin').onclick = async () => {
     $('#adminBody').classList.remove('hidden');
     $('#adminDate').value = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10);
     $('#spFrom').value = $('#adminDate').value;
-    try {
-      if (localStorage.getItem('sn-admin-today-hidden')) {
-        $('#todayBox').classList.add('hidden'); $('#btnToggleToday').textContent = '펼치기';
-      }
-    } catch (e) {}
     adminLoad();
   } catch (e) { showErr('#adminErr', e.message); }
 };
@@ -1277,7 +1349,7 @@ $('#inAdminPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#bt
 $('#btnAdminLoad').onclick = adminLoad;
 
 // 학생 비밀번호 초기화 — 시트에는 암호화된 값만 있어서 선생님도 볼 수 없으므로 초기화로 해결한다
-$('#adminRows').addEventListener('click', async e => {
+$('#adminBody').addEventListener('click', async e => {
   const b = e.target.closest('.pwreset');
   if (!b) return;
   const { sid, name } = b.dataset;
@@ -1288,35 +1360,221 @@ $('#adminRows').addEventListener('click', async e => {
     adminLoad();
   } catch (err) { alert(err.message); }
 });
-/* ── 오늘 제출 ── */
-function todayKST() { return new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); }
+/* ── 카드 접기·펴기 (상태는 이 기기에 기억) ── */
+function setFold(card, closed) {
+  card.classList.toggle('folded', closed);
+  const b = card.querySelector(':scope > h2 > .foldbtn');
+  if (b) { b.textContent = closed ? '펼치기' : '접기'; b.setAttribute('aria-expanded', String(!closed)); }
+}
+function initFolds() {
+  document.querySelectorAll('#scAdmin .card.fold').forEach(card => {
+    const key = card.dataset.fold, h = card.querySelector(':scope > h2');
+    const b = el('button', 'foldbtn'); b.type = 'button'; h.appendChild(b);
+    let closed = card.dataset.default === 'closed';
+    try { const v = localStorage.getItem('sn-fold-' + key); if (v !== null) closed = v === '1'; } catch (e) {}
+    setFold(card, closed);
+    h.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (btn && !btn.classList.contains('foldbtn')) return;     // 제목 줄의 다른 버튼은 그대로 동작
+      const now = !card.classList.contains('folded');
+      setFold(card, now);
+      try { localStorage.setItem('sn-fold-' + key, now ? '1' : '0'); } catch (e) {}
+    });
+  });
+}
+function openFold(key) {
+  const card = document.querySelector('#scAdmin .card.fold[data-fold="' + key + '"]');
+  if (card) setFold(card, false);
+}
+initFolds();
 
-function paintToday(r) {
-  $('#todayTitle').textContent = (r.date === todayKST() ? '오늘' : md(r.date)) + ' 제출';
-  const rows = r.rows.filter(x => !x.excluded);
-  // 실제로 기록을 남긴 학생만 (미리 세운 계획만 있거나 '없음'만 쓴 경우는 빼기)
-  const sub = rows.filter(x => x.recorded !== undefined ? x.recorded : (x.submitted && !x.empty));
-  $('#todayCount').textContent = sub.length + ' / ' + rows.length + '명';
-  const box = $('#todayBox');
-  if (!sub.length) {
-    box.innerHTML = '<p class="empty">' + (r.date === todayKST() ? '아직 오늘' : '이날') + ' 제출한 학생이 없어요.</p>';
-    return;
+/* ── 제출 / 미제출 ── */
+function todayKST() { return new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); }
+const openSids = new Set();       // 펼쳐 둔 학생 (다시 불러와도 유지)
+let lastAdmin = null;
+
+function isRecorded(x) { return x.recorded !== undefined ? x.recorded : (x.submitted && !x.empty); }
+
+function paintSubmissions(r) {
+  lastAdmin = r;
+  const label = r.date === todayKST() ? '오늘' : md(r.date);
+  const counted = r.rows.filter(x => !x.excluded);
+  const subs = r.rows.filter(isRecorded);                         // 집계 제외 계정도 기록했으면 보여 줌
+  const unsubs = counted.filter(x => !isRecorded(x));
+
+  $('#subTitle').textContent = label + ' 제출';
+  $('#subCount').textContent = subs.filter(x => !x.excluded).length + ' / ' + counted.length + '명';
+  $('#unsubTitle').textContent = label + ' 미제출';
+  $('#unsubCount').textContent = unsubs.length + '명';
+
+  // 제출한 학생
+  const box = $('#subList');
+  box.innerHTML = '';
+  if (!subs.length) {
+    box.innerHTML = '<p class="empty">' + (label === '오늘' ? '아직 오늘' : '이날') + ' 제출한 학생이 없어요.</p>';
   }
-  box.innerHTML = '<ul class="todaylist">' + sub.map(x => {
-    let sc;
-    if (x.total != null) sc = '<span class="sc">' + Number(x.total).toFixed(1) + '</span>';
-    else sc = '<span class="sc wait">채점 전</span>';
-    return '<li><span>' + esc(x.name) + '</span><span class="sid">' + esc(x.sid) + '</span>' + sc + '</li>';
-  }).join('') + '</ul>';
+  subs.forEach(s => {
+    const row = el('div', 'subrow');
+    const head = el('button', 'shead');
+    head.type = 'button';
+    head.setAttribute('aria-expanded', 'false');
+    head.innerHTML =
+      '<span class="chev">▸</span><span class="nm">' + esc(s.name) + '</span><span class="sid">' + esc(s.sid) + '</span>' +
+      '<span class="tags">' +
+        (s.excluded ? '<span class="tag">집계 제외</span>' : '') +
+        (s.photos && s.photos.length ? '<span class="tag">📷' + s.photos.length + '</span>' : '') +
+      '</span>' +
+      '<span class="sc">' + (s.star != null
+        ? starHTML(s.star) + '<span>' + s.star.toFixed(1) +
+          (s.bonus > 0 ? ' <span class="bonusmini">+' + s.bonus.toFixed(1) + '</span>' : '') +
+          ' = <b style="font-weight:400">' + s.total.toFixed(1) + '</b></span>'
+        : '<span class="wait">채점 전</span>') + '</span>';
+    const detail = el('div', 'sdetail hidden');
+    head.onclick = () => toggleStudent(row, head, detail, s, r.date);
+    row.appendChild(head); row.appendChild(detail);
+    box.appendChild(row);
+    if (openSids.has(s.sid)) toggleStudent(row, head, detail, s, r.date, true);
+  });
+  $('#btnExpandAll').textContent = subs.length && subs.every(s => openSids.has(s.sid)) ? '모두 접기' : '모두 펼치기';
+  $('#btnExpandAll').classList.toggle('hidden', !subs.length);
+
+  // 미제출 — 이름만
+  const ub = $('#unsubList');
+  $('#unsubPanel').innerHTML = '';
+  if (!unsubs.length) { ub.innerHTML = '<p class="empty">모두 제출했어요! 🎉</p>'; return; }
+  ub.innerHTML = '<div class="uchips">' + unsubs.map(x => {
+    let why = '';
+    if (x.pwState === 'none') why = '로그인 전';
+    else if (x.submitted) why = (x.note || '').trim() ? '내용 없음' : '계획만';
+    return '<button type="button" class="uchip" aria-pressed="false" data-sid="' + esc(x.sid) + '">' + esc(x.name) +
+           (why ? '<small>' + why + '</small>' : '') + '</button>';
+  }).join('') + '</div>';
 }
 
-$('#btnToggleToday').onclick = () => {
-  const box = $('#todayBox');
-  const hide = !box.classList.contains('hidden');
-  box.classList.toggle('hidden', hide);
-  $('#btnToggleToday').textContent = hide ? '펼치기' : '접기';
-  try { localStorage.setItem('sn-admin-today-hidden', hide ? '1' : ''); } catch (e) {}
+function toggleStudent(row, head, detail, s, date, forceOpen) {
+  const open = forceOpen || !row.classList.contains('open');
+  if (open && !detail.dataset.done) { renderStudentDetail(detail, s, date); detail.dataset.done = '1'; }
+  row.classList.toggle('open', open);
+  detail.classList.toggle('hidden', !open);
+  head.setAttribute('aria-expanded', String(open));
+  if (open) openSids.add(s.sid); else openSids.delete(s.sid);
+}
+
+$('#btnExpandAll').onclick = () => {
+  if (!lastAdmin) return;
+  const subs = lastAdmin.rows.filter(isRecorded);
+  const allOpen = subs.every(s => openSids.has(s.sid));
+  if (allOpen) subs.forEach(s => openSids.delete(s.sid)); else subs.forEach(s => openSids.add(s.sid));
+  paintSubmissions(lastAdmin);
 };
+
+// 미제출 이름을 누르면 학번·로그인 상태·비번 초기화만 보여 준다
+$('#unsubList').addEventListener('click', e => {
+  const c = e.target.closest('.uchip');
+  if (!c || !lastAdmin) return;
+  const was = c.getAttribute('aria-pressed') === 'true';
+  document.querySelectorAll('#unsubList .uchip').forEach(x => x.setAttribute('aria-pressed', 'false'));
+  const panel = $('#unsubPanel');
+  if (was) { panel.innerHTML = ''; return; }
+  c.setAttribute('aria-pressed', 'true');
+  const s = lastAdmin.rows.filter(x => x.sid === c.dataset.sid)[0];
+  if (!s) return;
+  panel.innerHTML = '<div class="upanel"><b style="font-family:var(--ui);font-weight:400">' + esc(s.name) + '</b>' +
+    '<span style="color:var(--muted)">' + esc(s.sid) + '</span>' + acctHTML(s) + '</div>';
+});
+
+function acctHTML(s) {
+  return (s.pwState === 'none' ? '<span class="pwtag none">로그인 전</span>' : '') +
+    (s.pwState === 'temp' ? '<span class="pwtag temp">임시 코드 ' + esc(s.tempCode) + '</span>' : '') +
+    (s.pwState === 'none' ? '' :
+      '<button class="linkbtn inline pwreset" data-sid="' + esc(s.sid) + '" data-name="' + esc(s.name) + '" style="font-size:.8rem">비번 초기화</button>');
+}
+
+function renderStudentDetail(box, s, date) {
+  const left = el('div', 'dleft'), right = el('div', 'dright');
+  box.appendChild(left); box.appendChild(right);
+
+  const plan = s.todos.length ? s.todos.map(t => (t.done ? '☑ ' : '☐ ') + t.text).join('  ') : '(할 일 없음)';
+  left.appendChild(el('div', 'plan', esc(plan)));
+  left.appendChild(el('div', 'note', esc(s.note || '(기록 없음)')));
+
+  if (s.photos && s.photos.length) {
+    const open = el('button', 'btn small ghost', '📷 사진 ' + s.photos.length + '장 보기');
+    open.style.marginTop = '4px';
+    const gal = el('div', 'shots');
+    gal.style.display = 'none';
+    open.onclick = () => {
+      if (gal.dataset.loaded) {
+        const on = gal.style.display !== 'none';
+        gal.style.display = on ? 'none' : 'grid';
+        open.textContent = on ? '📷 사진 ' + s.photos.length + '장 보기' : '📷 사진 접기';
+        return;
+      }
+      gal.dataset.loaded = '1';
+      gal.style.display = 'grid';
+      open.textContent = '📷 사진 접기';
+      s.photos.forEach(id => {
+        const w = el('div', 'shot', '<span class="spin">불러오는 중</span>');
+        gal.appendChild(w);
+        api({ action: 'adminPhoto', pw: adminPw, id }).then(res => {
+          photoCache[id] = res.data;
+          w.innerHTML = '';
+          const img = el('img');
+          img.src = res.data; img.alt = s.name + ' 학생이 올린 사진';
+          img.onclick = () => openShot(id);
+          w.appendChild(img);
+        }).catch(() => { w.innerHTML = '<span class="spin">못 불러옴</span>'; });
+      });
+    };
+    left.appendChild(open);
+    left.appendChild(gal);
+  }
+
+  // 채점 근거 (교사에게만 보임)
+  if (s.star != null) {
+    let w = '<b>🔍 채점 근거</b>\n' + esc(s.reason || '(근거 없음 — 이 기능을 넣기 전에 채점된 날입니다)');
+    if (s.bonusNote) w += '\n\n<b>🎁 보너스</b>\n' + esc(s.bonusNote.split(' · ').join('\n'));
+    left.appendChild(el('div', 'why', w));
+  }
+
+  // 코멘트·팁 — 학생에게 보인다
+  const makeEditor = (field, label, value, placeholder) => {
+    const cls = field === 'teacher' ? '' : ' ' + field;
+    right.appendChild(el('span', 'clabel' + cls, esc(label)));
+    const ta = el('textarea', 'tedit' + cls);
+    ta.value = value || '';
+    ta.placeholder = placeholder;
+    const save = el('button', 'btn small' + (field === 'teacher' ? '' : ' ghost'), '저장');
+    save.style.marginTop = '6px';
+    save.onclick = async () => {
+      save.textContent = '저장 중...';
+      try {
+        await api({ action: 'adminComment', pw: adminPw, date, sid: s.sid, field, comment: ta.value });
+        if (field === 'ai') s.ai = ta.value; else if (field === 'tip') s.tip = ta.value; else s.teacher = ta.value;
+        save.textContent = '저장됨 ✓';
+        setTimeout(() => { save.textContent = '저장'; }, 1600);
+      } catch (e) { alert(e.message); save.textContent = '저장'; }
+    };
+    right.appendChild(ta); right.appendChild(save);
+    // 내용 길이만큼 칸을 늘린다
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.max(62, ta.scrollHeight + 4) + 'px'; };
+    ta.addEventListener('input', fit);
+    requestAnimationFrame(fit);
+  };
+
+  makeEditor('teacher', '✏️ 선생님 한마디', s.teacher,
+    '채점 전에도 쓸 수 있어요. 저장하면 학생에게 바로 보여요. 비워 두면 안 보여요.');
+  if (s.ai || s.star != null) {
+    makeEditor('ai', '🐻 AI 공부 코치 (고쳐 쓸 수 있어요)', s.ai, 'AI 코멘트가 비어 있어요');
+    makeEditor('tip', '📚 이 부분 공부 팁' + (s.tipSource ? ' · 참고: ' + s.tipSource : '') + ' (학생에게 보여요)', s.tip,
+      '그날 기록에서 단원을 알 수 없으면 비어 있어요. 직접 써도 돼요.');
+  } else {
+    right.appendChild(el('span', 'clabel ai', '🐻 AI 공부 코치 — 채점하면 여기에 생겨요'));
+  }
+
+  right.appendChild(el('div', 'acct',
+    '<span>' + esc(s.sid) + '</span><span>누적 ' + s.cumTotal.toFixed(1) + '점' + (s.cumRank ? ' · ' + s.cumRank + '등' : '') + '</span>' + acctHTML(s)));
+}
 
 /* ── 시험 기간 ── */
 let rankTermId = '';         // 누적 순위에서 고른 시험 (비우면 서버가 알맞은 시험을 고름)
@@ -1395,7 +1653,8 @@ $('#btnToggleTerm').onclick = () => {
   const w = $('#termFormWrap');
   const hide = !w.classList.contains('hidden');
   w.classList.toggle('hidden', hide);
-  $('#btnToggleTerm').textContent = hide ? '펼치기' : '접기';
+  $('#btnToggleTerm').textContent = hide ? '＋ 새 시험 기간 만들기' : '닫기';
+  if (hide) resetTermForm();
 };
 
 $('#termList').addEventListener('click', async e => {
@@ -1409,8 +1668,9 @@ $('#termList').addEventListener('click', async e => {
     tmSubjects = (t.subjects || []).slice(); paintSubjEditor();
     $('#btnTmSave').textContent = '수정 저장';
     $('#btnTmCancel').classList.remove('hidden');
+    openFold('term');
     $('#termFormWrap').classList.remove('hidden');
-    $('#btnToggleTerm').textContent = '접기';
+    $('#btnToggleTerm').textContent = '닫기';
     $('#tmName').focus();
   }
   if (del) {
@@ -1488,11 +1748,6 @@ $('#spList').addEventListener('click', async e => {
   } catch (err) { alert(err.message); }
 });
 
-$('#btnToggleRank').onclick = () => {
-  const on = !$('#adminRank').classList.contains('hidden');
-  $('#adminRank').classList.toggle('hidden', on);
-  $('#btnToggleRank').textContent = on ? '펼치기' : '접기';
-};
 $('#btnAdminOut').onclick = () => {
   adminPw = '';
   $('#inAdminPw').value = '';
@@ -1518,11 +1773,12 @@ $('#btnAdminScore').onclick = async () => {
 };
 
 async function adminLoad() {
-  const box = $('#adminRows');
+  const box = $('#subList');
   box.innerHTML = '<p class="empty">불러오는 중...</p>';
   $('#adminSummary').innerHTML = '';
-  $('#todayBox').innerHTML = '<p class="empty">불러오는 중...</p>';
-  $('#todayCount').textContent = '';
+  $('#unsubList').innerHTML = '';
+  $('#unsubPanel').innerHTML = '';
+  ['#subCount', '#unsubCount'].forEach(id => { $(id).textContent = ''; });
   try {
     const r = await api({ action: 'adminList', pw: adminPw, date: $('#adminDate').value, termId: rankTermId || '' });
 
@@ -1535,7 +1791,7 @@ async function adminLoad() {
     paintSpecialList(r.bonusRules || []);
     paintTerms(r.terms || []);
     paintTermNow(r);
-    paintToday(r);
+    paintSubmissions(r);
 
     // 누적 순위
     const rk = $('#adminRank');
@@ -1565,112 +1821,6 @@ async function adminLoad() {
     const rs = $('#rankTermSel');
     if (rs) rs.onchange = () => { rankTermId = rs.value; adminLoad(); };
 
-    box.innerHTML = '';
-    r.rows.forEach(s => {
-      const row = el('div', 'trow');
-      row.innerHTML =
-        '<div class="thead"><span class="dot' + (s.submitted ? ' on' : '') + '"></span>' +
-        '<span>' + esc(s.name) + '</span>' +
-        '<span class="meta" style="color:var(--muted);font-size:.8rem">' + esc(s.sid) +
-        (s.excluded ? ' · 집계 제외' : '') +
-        (s.submitted && s.empty ? ' · <span style="color:#9B3247">내용 없음, 채점 제외</span>' : '') + '</span>' +
-        (s.pwState === 'none' ? ' <span class="pwtag none">로그인 전</span>' : '') +
-        (s.pwState === 'temp' ? ' <span class="pwtag temp">임시 코드 ' + esc(s.tempCode) + '</span>' : '') +
-        (s.pwState === 'none' ? '' :
-          '<button class="linkbtn inline pwreset" data-sid="' + esc(s.sid) + '" data-name="' + esc(s.name) + '" style="font-size:.76rem;margin-left:6px">비번 초기화</button>') +
-        (s.star != null
-          ? starHTML(s.star) + '<span class="meta" style="font-size:.82rem">' + s.star.toFixed(1) +
-            (s.bonus > 0 ? ' <span class="bonusmini">+' + s.bonus.toFixed(1) + '</span>' : '') +
-            ' = <b style="font-weight:400;color:var(--cocoa)">' + s.total.toFixed(1) + '</b></span>'
-          : '') +
-        '<span class="rank">누적 ' + s.cumTotal.toFixed(1) + '점' + (s.cumRank ? ' · ' + s.cumRank + '등' : '') + '</span></div>';
-
-      if (s.submitted) {
-        const body = el('div', 'tbody');
-        const plan = s.todos.length
-          ? s.todos.map(t => (t.done ? '☑ ' : '☐ ') + t.text).join('  ')
-          : '(할 일 없음)';
-        body.appendChild(el('div', 'plan', esc(plan)));
-        body.appendChild(el('div', '', esc(s.note || '(기록 없음)')));
-        row.appendChild(body);
-
-        if (s.photos && s.photos.length) {
-          const open = el('button', 'btn small ghost', '📷 사진 ' + s.photos.length + '장 보기');
-          open.style.marginTop = '8px';
-          const gal = el('div', 'shots');
-          gal.style.display = 'none';
-          open.onclick = () => {
-            if (gal.dataset.loaded) {
-              const on = gal.style.display !== 'none';
-              gal.style.display = on ? 'none' : 'grid';
-              open.textContent = (on ? '📷 사진 ' : '📷 사진 접기 ') + s.photos.length + (on ? '장 보기' : '장');
-              return;
-            }
-            gal.dataset.loaded = '1';
-            gal.style.display = 'grid';
-            open.textContent = '📷 사진 접기 ' + s.photos.length + '장';
-            s.photos.forEach(id => {
-              const w = el('div', 'shot', '<span class="spin">불러오는 중</span>');
-              gal.appendChild(w);
-              api({ action: 'adminPhoto', pw: adminPw, id }).then(res => {
-                photoCache[id] = res.data;
-                w.innerHTML = '';
-                const img = el('img');
-                img.src = res.data; img.alt = s.name + ' 학생이 올린 사진';
-                img.onclick = () => openShot(id);
-                w.appendChild(img);
-              }).catch(() => { w.innerHTML = '<span class="spin">못 불러옴</span>'; });
-            });
-          };
-          row.appendChild(open);
-          row.appendChild(gal);
-        }
-
-        // 채점 근거 (교사에게만 보임)
-        if (s.star != null) {
-          let w = '<b>🔍 채점 근거</b>\n' + esc(s.reason || '(근거 없음 — 이 기능을 넣기 전에 채점된 날입니다)');
-          if (s.bonusNote) w += '\n\n<b>🎁 보너스</b>\n' + esc(s.bonusNote.split(' · ').join('\n'));
-          row.appendChild(el('div', 'why', w));
-        }
-
-        // 코멘트 두 칸 — 둘 다 학생에게 보인다
-        {
-          const makeEditor = (field, label, value, placeholder) => {
-            const cls = field === 'teacher' ? '' : ' ' + field;
-            row.appendChild(el('span', 'clabel' + cls, esc(label)));
-            const ta = el('textarea', 'tedit' + cls);
-            ta.value = value || '';
-            ta.placeholder = placeholder;
-            const save = el('button', 'btn small' + (field === 'ai' ? ' ghost' : ''), '저장');
-            save.style.marginTop = '6px';
-            save.onclick = async () => {
-              save.textContent = '저장 중...';
-              try {
-                await api({ action: 'adminComment', pw: adminPw, date: r.date, sid: s.sid, field, comment: ta.value });
-                if (field === 'ai') s.ai = ta.value; else if (field === 'tip') s.tip = ta.value; else s.teacher = ta.value;
-                save.textContent = '저장됨 ✓';
-                setTimeout(() => { save.textContent = '저장'; }, 1600);
-              } catch (e) { alert(e.message); save.textContent = '저장'; }
-            };
-            row.appendChild(ta); row.appendChild(save);
-          };
-
-          makeEditor('teacher', '✏️ 선생님 한마디', s.teacher,
-            '채점 전에도 쓸 수 있어요. 저장하면 학생에게 바로 보여요. 비워 두면 안 보여요.');
-
-          if (s.ai || s.star != null) {
-            makeEditor('ai', '🐻 AI 공부 코치 (고쳐 쓸 수 있어요)', s.ai, 'AI 코멘트가 비어 있어요');
-            makeEditor('tip', '📚 이 부분 공부 팁' + (s.tipSource ? ' · 참고: ' + s.tipSource : '') + ' (학생에게 보여요)', s.tip,
-              '그날 기록에서 단원을 알 수 없으면 비어 있어요. 직접 써도 돼요.');
-          } else {
-            row.appendChild(el('span', 'clabel ai', '🐻 AI 공부 코치 — 채점하면 여기에 생겨요'));
-          }
-        }
-      } else {
-        row.appendChild(el('div', 'tbody', '<span class="empty">제출하지 않았어요.</span>'));
-      }
-      box.appendChild(row);
-    });
   } catch (e) { box.innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
 }
 
